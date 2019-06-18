@@ -16,6 +16,7 @@ ethcore = { path = "../ethcore", features = ["test-helpers", "json-tests", "to-p
 ethereum-types = "0.6.0"
 ethjson = { path = "../json" }
 evm = { path = "../ethcore/evm" }
+hex-slice = "0.1.4"
 panic_hook = { path = "../util/panic-hook" }
 parity-bytes = "0.1"
 rustc-hex = "1.0"

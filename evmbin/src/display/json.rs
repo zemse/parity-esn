@@ -16,10 +16,14 @@
 
 //! JSON VM output.
 
+extern crate hex_slice;
+
 use std::collections::HashMap;
+use std::fmt;
 use std::mem;
 
 use ethereum_types::{U256, H256, BigEndianHash};
+// use hex_slice::AsHex;
 use bytes::ToPretty;
 use ethcore::trace;
 
@@ -70,10 +74,40 @@ pub struct InitMessage<'a> {
 #[derive(Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct MessageSuccess<'a> {
+	// Attempt 2
+	// output: &'a HexOutput,
+	// gas_used: &'a HexOutput,
 	output: &'a str,
 	gas_used: &'a str,
 	time: &'a u64,
 }
+
+// Attempt 2
+// Reference: https://doc.rust-lang.org/std/fmt/trait.LowerHex.html
+#[derive(Serialize, Debug)]
+pub struct HexOutput(str);
+
+impl fmt::LowerHex for HexOutput {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+			let val = self.0;
+
+			write!(f, "{:x}", val)
+    }
+}
+
+// Attempt 4
+struct HexWrapper {
+    inner: Vec<u8>,
+}
+
+impl fmt::LowerHex for HexWrapper {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+			let val = self.inner;
+
+			write!(f, "{:x}", val)
+    }
+}
+
 
 #[derive(Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -93,6 +127,7 @@ impl Informant {
 	}
 
 	fn informant_trace(informant: &Informant, gas_used: U256) -> String {
+		println!("json - informant_trace");
 		let info = ::evm::Instruction::from_u8(informant.instruction).map(|i| i.info());
 
 		let trace_data =
@@ -117,6 +152,7 @@ impl vm::Informant for Informant {
 	type Sink = ();
 
 	fn before_test(&mut self, name: &str, action: &str) {
+		println!("json - before_test");
 		let init_message =
 			InitMessage {
 				action: &format!("{}", action),
@@ -134,21 +170,42 @@ impl vm::Informant for Informant {
 	fn clone_sink(&self) -> Self::Sink { () }
 
 	fn finish(result: vm::RunResult<Self::Output>, _sink: &mut Self::Sink) {
+		println!("json - finish");
 		match result {
 			Ok(success) => {
 				for trace in success.traces.unwrap_or_else(Vec::new) {
 					println!("{}", trace);
 				}
 
+				// Original
+				println!("Original Output {}", &format!("0x{}", success.output.to_hex()));
+
+				// Attempt 1
+				println!("Attempt 1 {}", &format!("{:#x}", success.output));
+
+				// Attempt 2
+				// Convert Vec<u8> to String
+				// let bytes = success.output;
+    		// let success_output = HexOutput(String::from_utf8(bytes).expect("Found invalid UTF-8"));
+    		// println!("{:?}", success_output);
+
+				// Attempt 3 - use hex_slice Rust crate
+				// println!("Attempt 3 - Output {:#x}", success_output.as_hex());
+
 				let message_success =
 					MessageSuccess {
+						// Original
 						output: &format!("0x{}", success.output.to_hex()),
+						// Attempt 1
+						output: &format!("{:#x}", success.output),		
+						// Attempt 2 & 3
+						// output: &success_output,
 						gas_used: &format!("{:#x}", success.gas_used),
 						time: &display::as_micros(&success.time),
 					}
 				;
 
-				println!("{:?}", message_success);
+				println!("MEH {:?}", message_success);
 			},
 			Err(failure) => {
 				for trace in failure.traces.unwrap_or_else(Vec::new) {
@@ -163,7 +220,7 @@ impl vm::Informant for Informant {
 					}
 				;
 
-				println!("{:?}", message_failure);
+				println!("NEH {:?}", message_failure);
 			},
 		}
 	}
