@@ -52,6 +52,10 @@ use std::str::FromStr;
 use ethkey::Secret;
 use rustc_hex::FromHex;
 
+// TODO - add instructions on how to install the whisper binary
+// (similar to how we did it for evmbin)
+// i.e. cargo build -p whisper-cli, then ./target/debug/whisper --help
+
 const POOL_UNIT: usize = 1024 * 1024;
 const USAGE: &'static str = r#"
 Parity Whisper-v2 CLI.
@@ -226,7 +230,9 @@ fn execute<S, I>(command: I) -> Result<(), Error> where I: IntoIterator<Item=S>,
 	let pool_size = args.flag_whisper_pool_size * POOL_UNIT;
 	let rpc_url = format!("{}:{}", args.flag_rpc_address, args.flag_rpc_port);
 
+	// FIXME - initialise logger doesn't work. reuse the approach used for evmbin logger
 	initialize_logger(args.flag_log);
+	info!("initialized logger");
 	info!(target: "whisper-cli", "start");
 
 	// Filter manager that will dispatch `decryption tasks`
@@ -240,7 +246,6 @@ fn execute<S, I>(command: I) -> Result<(), Error> where I: IntoIterator<Item=S>,
 		let port = match args.flag_port.as_str() {
 			"random" => 0 as u16,
 			port => port.parse::<u16>()?,
-
 		};
 		let addr = Ipv4Addr::from_str(&args.flag_address[..])?;
 		cfg.listen_address = Some(SocketAddr::V4(SocketAddrV4::new(addr, port)));
@@ -252,6 +257,7 @@ fn execute<S, I>(command: I) -> Result<(), Error> where I: IntoIterator<Item=S>,
 				Secret::from_slice(key.as_slice())
 			}
 		};
+		// QUESTION - why is NAT always disabled? when would you use it?
 		cfg.nat_enabled = false;
 		cfg
 	};
@@ -281,6 +287,7 @@ fn execute<S, I>(command: I) -> Result<(), Error> where I: IntoIterator<Item=S>,
 	io.extend_with(whisper::rpc::WhisperPubSub::to_delegate(whisper_factory.make_handler(shared_network.clone())));
 
 	let server = jsonrpc_http_server::ServerBuilder::new(io)
+		// QUESTION - why don't we allow a cli option to configure allowed origins
 		.cors(DomainsValidation::AllowOnly(vec![AccessControlAllowOrigin::Null]))
 		.start_http(&rpc_url.parse()?)?;
 
@@ -311,6 +318,7 @@ mod tests {
 	}
 
 	#[test]
+	// QUESTION - why do we ignore this test?
 	#[ignore]
 	fn privileged_port() {
 		let command = vec!["whisper", "--port=3"]
@@ -332,12 +340,22 @@ mod tests {
 	}
 
 	#[test]
+	// The Whisper pool size is of type usize. Invalid Whisper pool sizes include
+	// values below 0 and either above 2 ** 64 - 1 on a 64-bit processor or
+	// above 2 ** 32 - 1 on a 32-bit processor.
 	fn invalid_whisper_pool_size() {
-		let command = vec!["whisper", "--whisper-pool-size=-100000000000000000000000000000000000000"]
+		let command_pool_size_too_low = vec!["whisper", "--whisper-pool-size=-1"]
 			.into_iter()
 			.map(Into::into)
 			.collect::<Vec<String>>();
 
-		assert!(execute(command).is_err());
+		let command_pool_size_too_high = vec![
+			"whisper", "--whisper-pool-size=18446744073709552000"]
+			.into_iter()
+			.map(Into::into)
+			.collect::<Vec<String>>();
+
+		assert!(execute(command_pool_size_too_low).is_err());
+		assert!(execute(command_pool_size_too_high).is_err());
 	}
 }
