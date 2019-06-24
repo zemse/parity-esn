@@ -19,7 +19,7 @@
 //! Manages standard message format decoding, ephemeral identities, signing,
 //! encryption, and decryption.
 //!
-//! Provides an interface for using whisper to transmit data securely.
+//! Provides an interface for using Whisper to transmit data securely.
 
 use std::sync::Arc;
 
@@ -47,6 +47,8 @@ pub use self::filter::Manager as FilterManager;
 
 // create whisper RPC error.
 fn whisper_error<T: Into<String>>(message: T) -> Error {
+	// QUESTION - is there a reason why the 32085 magic number was chosen?
+	// is this a standard error code, if so from where?
 	const ERROR_CODE: i64 = -32085;
 
 	Error {

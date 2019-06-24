@@ -462,7 +462,7 @@ impl Message {
 	}
 
 	/// Get the message data.
-	pub fn message_data(&self) -> &[u8] {
+	pub fn message_data(&self) -> &EnvelopeMessage {
 		&self.envelope.message_data
 	}
 }
