@@ -58,6 +58,12 @@ fn whisper_error<T: Into<String>>(message: T) -> Error {
 	}
 }
 
+// QUESTION - why isn't the type of the topic just u8 instead of [u8],
+// or even [u8, 4] (series of 4-byte topics), see EnvelopeTopics message.rs.
+// Also, should we define a type in this or use the type in message.rs and move
+// it to be defined in a common types file.
+//
+// QUESTION - why didn't we need to use `topic_hash` in message.rs
 fn topic_hash(topic: &[u8]) -> H256 {
 	H256(::tiny_keccak::keccak256(topic))
 }

@@ -73,7 +73,7 @@ pub fn work_factor_proved(size: u64, ttl: EnvelopeTTLDuration, hash: EnvelopePro
 	2.0_f64.powi(leading_zeros as i32) / spacetime
 }
 
-/// A topic of a message.
+/// An topic of a message. The topic is an abridged version of the first four bytes of the original topic's hash.
 #[derive(Debug, Default, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct EnvelopeTopic(pub EnvelopeTopicsData);
 
