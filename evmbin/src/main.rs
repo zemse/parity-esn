@@ -202,49 +202,31 @@ fn run_state_test(args: Args) {
 					TrieSpec::Secure
 				};
 
+				let tx_input = TxInput {
+					state_test_name: &state_test_name,
+					tx_index,
+					fork_spec_name: &fork_spec_name,
+					pre_state: &pre,
+					post_root,
+					env_info: &env_info,
+					transaction,
+					informant: display::std_json::Informant::err_only(),
+					trie_spec,
+				};
+
 				// Execute the given transaction and verify resulting state root
 				// for CLI option `--std-dump-json` or `--std-json`.
 				if args.flag_std_dump_json || args.flag_std_json {
 					if args.flag_std_err_only {
-						let tx_input = TxInput {
-							state_test_name: &state_test_name,
-							tx_index,
-							fork_spec_name: &fork_spec_name,
-							pre_state: &pre,
-							post_root,
-							env_info: &env_info,
-							transaction,
-							informant: display::std_json::Informant::err_only(),
-							trie_spec,
-						};
+						tx_input::std_json_err_only();
 						// Use Standard JSON informant with err only
 						info::run_transaction(tx_input)
 					} else if args.flag_std_out_only {
-						let tx_input = TxInput {
-							state_test_name: &state_test_name,
-							tx_index,
-							fork_spec_name: &fork_spec_name,
-							pre_state: &pre,
-							post_root,
-							env_info: &env_info,
-							transaction,
-							informant: display::std_json::Informant::out_only(),
-							trie_spec,
-						};
+						tx_input::std_json_out_only();
 						// Use Standard JSON informant with out only
 						info::run_transaction(tx_input)
 					} else {
-						let tx_input = TxInput {
-							state_test_name: &state_test_name,
-							tx_index,
-							fork_spec_name: &fork_spec_name,
-							pre_state: &pre,
-							post_root,
-							env_info: &env_info,
-							transaction,
-							informant: display::std_json::Informant::default(),
-							trie_spec,
-						};
+						tx_input::std_json_default();
 						// Use Standard JSON informant default
 						info::run_transaction(tx_input)
 					}
@@ -252,31 +234,11 @@ fn run_state_test(args: Args) {
 					// Execute the given transaction and verify resulting state root
 					// for CLI option `--json`.
 					if args.flag_json {
-						let tx_input = TxInput {
-							state_test_name: &state_test_name,
-							tx_index,
-							fork_spec_name: &fork_spec_name,
-							pre_state: &pre,
-							post_root,
-							env_info: &env_info,
-							transaction,
-							informant: display::json::Informant::default(),
-							trie_spec,
-						};
+						tx_input::json_default();
 						// Use JSON informant
 						info::run_transaction(tx_input)
 					} else {
-						let tx_input = TxInput {
-							state_test_name: &state_test_name,
-							tx_index,
-							fork_spec_name: &fork_spec_name,
-							pre_state: &pre,
-							post_root,
-							env_info: &env_info,
-							transaction,
-							informant: display::simple::Informant::default(),
-							trie_spec,
-						};
+						tx_input::simple_default();
 						// Use Simple informant
 						info::run_transaction(tx_input)
 					}

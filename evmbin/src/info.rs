@@ -23,6 +23,7 @@ use ethcore::{state, state_db, trace, spec, pod_state, TrieSpec};
 use ethjson;
 use types::transaction;
 use vm::ActionParams;
+use display;
 
 /// EVM execution informant.
 pub trait Informant: trace::VMTracer {
@@ -104,29 +105,67 @@ pub fn run_action<T: Informant>(
 #[derive(Debug)]
 pub struct TxInput<'a, T> {
 	/// State test name associated with the transaction.
-	pub state_test_name: &'a str,
+	state_test_name: &'a str,
 	/// Transaction index from list of transactions within a state root hash corresponding to a chain.
-	pub tx_index: usize,
+	tx_index: usize,
 	/// Fork specification (i.e. Constantinople, EIP150, EIP158, etc).
-	pub fork_spec_name: &'a ethjson::spec::ForkSpec,
+	fork_spec_name: &'a ethjson::spec::ForkSpec,
 	/// State of all accounts in the system that is a binary tree mapping of each account address to account data
 	/// that is expressed as Plain Old Data containing the account balance, account nonce, account code in bytes,
 	/// and the account storage binary tree map.
-	pub pre_state: &'a pod_state::PodState,
+	pre_state: &'a pod_state::PodState,
 	/// State root hash associated with the transaction.
-	pub post_root: H256,
+	post_root: H256,
 	/// Client environment information associated with the transaction's chain specification.
-	pub env_info: &'a client::EnvInfo,
+	env_info: &'a client::EnvInfo,
 	/// Signed transaction accompanied by a signature that may be unverified and a successfully recovered
 	/// sender address. The unverified transaction contains a recoverable ECDSA signature that has been encoded
 	/// as RSV components and includes replay protection for the specified chain. Verification of the signed transaction
 	/// with a valid secret of an account's keypair and a specific chain may be used to recover the sender's public key
 	/// and their associated address by applying the Keccak-256 hash function.
-	pub transaction: transaction::SignedTransaction,
+	transaction: transaction::SignedTransaction,
 	/// JSON formatting informant.
-	pub informant: T,
+	informant: T,
 	///	Trie specification (i.e. Generic trie, Secure trie, Secure with fat database).
-	pub trie_spec: TrieSpec,
+	trie_spec: TrieSpec,
+}
+
+impl<'a, T> TxInput<'a, T> {
+	// Associated functions
+	fn std_json_err_only() -> Self {
+		TxInput {
+			informant: display::std_json::Informant::err_only(),
+			..
+		}
+	}
+
+	fn std_json_out_only() -> Self {
+		TxInput {
+			informant: display::std_json::Informant::out_only(),
+			..
+		}
+	}
+
+	fn std_json_default() -> Self {
+		TxInput {
+			informant: display::std_json::Informant::default(),
+			..
+		}
+	}
+
+	fn json_default() -> Self {
+		TxInput {
+			informant: display::json::Informant::default(),
+			..
+		}
+	}
+
+	fn simple_default() -> Self {
+		TxInput {
+			informant: display::simple::Informant::default(),
+			..
+		}
+	}
 }
 
 /// Execute given transaction and verify resulting state root.
