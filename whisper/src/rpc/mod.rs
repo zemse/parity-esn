@@ -76,6 +76,17 @@ fn abridge_topic(topic: &[u8]) -> EnvelopeTopic {
 	abridged.into()
 }
 
+// TODO - Research about use of either of the following on Whisper network "shh":
+// * Restoring 32-byte local identity hex encoded in H256, using either:
+//   1) unvalidated private key for ECIES, SECP256k1, or
+//   2) Symmetric 32-byte AES key. 
+// * Restore public key hex encoded public key for ECIES, SECP256k1,
+// in response to providing a hex encoded 32-byte local identity, only 
+// it has been stored asymmetrically
+// * Restore unvalidated private key for ECIES, SECP256k1, in response to
+// providing a hex encoded 32-byte local identity, only it it has been stored
+// asymmetrically.
+//
 /// Whisper RPC interface.
 #[rpc]
 pub trait Whisper {
@@ -107,6 +118,7 @@ pub trait Whisper {
 	#[rpc(name = "shh_getPrivateKey")]
 	fn get_private(&self, types::Identity) -> Result<types::Private, Error>;
 
+	/// Get symmetric key. Succeeds if identity has been stored.
 	#[rpc(name = "shh_getSymKey")]
 	fn get_symmetric(&self, types::Identity) -> Result<types::Symmetric, Error>;
 
