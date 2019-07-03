@@ -40,6 +40,16 @@ use test_helpers::{
 };
 use verification::queue::kind::blocks::Unverified;
 
+fn create_and_import_blocks(n: usize, client: Arc<Client>, address: &Address, test_spec: &Spec) {
+	for _ in 0..n {
+		let mut b = client.prepare_open_block(Address::zero(), (3141562.into(), 31415620.into()), vec![]).unwrap();
+		b.block_mut().state_mut().add_balance(address, &5.into(), CleanupMode::NoEmpty).unwrap();
+		b.block_mut().state_mut().commit().unwrap();
+		let b = b.close_and_lock().unwrap().seal(&*test_spec.engine, vec![]).unwrap();
+		client.import_sealed_block(b).unwrap(); // account change is in the journal overlay
+	}
+}
+
 #[test]
 fn imports_from_empty() {
 	let db = test_helpers::new_db();
@@ -117,7 +127,7 @@ fn query_none_block() {
 		Arc::new(Miner::new_for_tests(&spec, None)),
 		IoChannel::disconnected(),
 	).unwrap();
-    let non_existant = client.block_header(BlockId::Number(188));
+	let non_existant = client.block_header(BlockId::Number(188));
 	assert!(non_existant.is_none());
 }
 
@@ -255,6 +265,7 @@ fn can_mine() {
 
 #[test]
 fn change_history_size() {
+	let _ = env_logger::try_init();
 	let db = test_helpers::new_db();
 	let test_spec = Spec::new_null();
 	let mut config = ClientConfig::default();
@@ -269,14 +280,7 @@ fn change_history_size() {
 			Arc::new(Miner::new_for_tests(&test_spec, None)),
 			IoChannel::disconnected()
 		).unwrap();
-
-		for _ in 0..20 {
-			let mut b = client.prepare_open_block(Address::zero(), (3141562.into(), 31415620.into()), vec![]).unwrap();
-			b.block_mut().state_mut().add_balance(&address, &5.into(), CleanupMode::NoEmpty).unwrap();
-			b.block_mut().state_mut().commit().unwrap();
-			let b = b.close_and_lock().unwrap().seal(&*test_spec.engine, vec![]).unwrap();
-			client.import_sealed_block(b).unwrap(); // account change is in the journal overlay
-		}
+		create_and_import_blocks(20, client, &address, &test_spec);
 	}
 	let mut config = ClientConfig::default();
 	config.history = 10;

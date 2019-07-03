@@ -68,7 +68,7 @@ struct AccountCache {
 struct CacheQueueItem {
 	/// Account address.
 	address: Address,
-	/// Acccount data or `None` if account does not exist.
+	/// Account data or `None` if account does not exist.
 	account: SyncAccount,
 	/// Indicates that the account was modified before being
 	/// added to the cache.
@@ -132,21 +132,21 @@ impl StateDB {
 	// TODO: make the cache size actually accurate by moving the account storage cache
 	// into the `AccountCache` structure as its own `LruCache<(Address, H256), H256>`.
 	pub fn new(db: Box<dyn JournalDB>, cache_size: usize) -> StateDB {
-		let bloom = Self::load_bloom(&**db.backing());
+		let account_bloom = Self::load_bloom(&**db.backing());
 		let acc_cache_size = cache_size * ACCOUNT_CACHE_RATIO / 100;
 		let code_cache_size = cache_size - acc_cache_size;
 		let cache_items = acc_cache_size / ::std::mem::size_of::<Option<Account>>();
 
 		StateDB {
-			db: db,
+			db,
 			account_cache: Arc::new(Mutex::new(AccountCache {
 				accounts: LruCache::new(cache_items),
 				modifications: VecDeque::new(),
 			})),
 			code_cache: Arc::new(Mutex::new(MemoryLruCache::new(code_cache_size))),
 			local_cache: Vec::new(),
-			account_bloom: bloom,
-			cache_size: cache_size,
+			account_bloom,
+			cache_size,
 			parent_hash: None,
 			commit_hash: None,
 			commit_number: None,
@@ -172,7 +172,7 @@ impl StateDB {
 			let key: [u8; 8] = (i as u64).to_le_bytes();
 			bloom_parts[i] = db.get(COL_ACCOUNT_BLOOM, &key).expect("low-level database error")
 				.map(|val| {
-					assert!(val.len() == 8, "low-level database error");
+					assert_eq!(val.len(), 8, "low-level database error");
 					let mut buff = [0u8; 8];
 					buff.copy_from_slice(&*val);
 					u64::from_le_bytes(buff)
@@ -200,9 +200,7 @@ impl StateDB {
 
 	/// Journal all recent operations under the given era and ID.
 	pub fn journal_under(&mut self, batch: &mut DBTransaction, now: u64, id: &H256) -> io::Result<u32> {
-		{
-			Self::commit_bloom(batch, self.account_bloom.drain_journal())?;
-		}
+		Self::commit_bloom(batch, self.account_bloom.drain_journal())?;
 		let records = self.db.journal_under(batch, now, id)?;
 		self.commit_hash = Some(id.clone());
 		self.commit_number = Some(now);
@@ -215,7 +213,7 @@ impl StateDB {
 		self.db.mark_canonical(batch, end_era, canon_id)
 	}
 
-	/// Propagate local cache into the global cache and synchonize
+	/// Propagate local cache into the global cache and synchronize
 	/// the global cache with the best block state.
 	/// This function updates the global cache by removing entries
 	/// that are invalidated by chain reorganization. `sync_cache`
@@ -227,7 +225,7 @@ impl StateDB {
 		let cache = &mut *cache;
 
 		// Purge changes from re-enacted and retracted blocks.
-		// Filter out commiting block if any.
+		// Filter out committing block if any.
 		let mut clear = false;
 		for block in enacted.iter().filter(|h| self.commit_hash.as_ref().map_or(true, |p| *h != p)) {
 			clear = clear || {
@@ -324,6 +322,7 @@ impl StateDB {
 
 	/// Clone the database.
 	pub fn boxed_clone(&self) -> StateDB {
+		trace!(target: "dp", "boxed_clone: CLONING StateDB – Bloom is useless now");
 		StateDB {
 			db: self.db.boxed_clone(),
 			account_cache: self.account_cache.clone(),
@@ -339,6 +338,7 @@ impl StateDB {
 
 	/// Clone the database for a canonical state.
 	pub fn boxed_clone_canon(&self, parent: &H256) -> StateDB {
+		trace!(target: "dp", "boxed_clone_canon: CLONING StateDB – Bloom is useless now");
 		StateDB {
 			db: self.db.boxed_clone(),
 			account_cache: self.account_cache.clone(),
@@ -413,11 +413,11 @@ impl state::Backend for StateDB {
 		self.db.as_hash_db_mut()
 	}
 
-	fn add_to_account_cache(&mut self, addr: Address, data: Option<Account>, modified: bool) {
+	fn add_to_account_cache(&mut self, address: Address, data: Option<Account>, modified: bool) {
 		self.local_cache.push(CacheQueueItem {
-			address: addr,
+			address,
 			account: SyncAccount(data),
-			modified: modified,
+			modified,
 		})
 	}
 
@@ -457,12 +457,15 @@ impl state::Backend for StateDB {
 
 	fn note_non_null_account(&mut self, address: &Address) {
 		trace!(target: "account_bloom", "Note account bloom: {:?}", address);
-		self.account_bloom.set(keccak(address).as_bytes())
+		self.account_bloom.set(keccak(address).as_bytes());
+		assert!(self.account_bloom.check(keccak(address).as_bytes()), "bloom.set failed?");
 	}
 
 	fn is_known_null(&self, address: &Address) -> bool {
-		trace!(target: "account_bloom", "Check account bloom: {:?}", address);
-		!self.account_bloom.check(keccak(address).as_bytes());
+		let is_null = !self.account_bloom.check(keccak(address).as_bytes());
+		trace!(target: "account_bloom", "Check account bloom: {:?}: {}", address, is_null);
+		is_null
+
 	}
 }
 

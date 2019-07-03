@@ -85,11 +85,7 @@ impl Bloom {
 		let bitmap_bits = (bitmap_size as u64) * 8u64;
 		let k_num = Bloom::optimal_k_num(bitmap_bits, items_count);
 		let bitmap = BitVecJournal::new(bitmap_bits as usize);
-		Bloom {
-			bitmap: bitmap,
-			bitmap_bits: bitmap_bits,
-			k_num: k_num,
-		}
+		Bloom { bitmap, bitmap_bits, k_num }
 	}
 
 	/// Initializes bloom filter from saved state
@@ -97,11 +93,7 @@ impl Bloom {
 		let bitmap_size = parts.len() * 8;
 		let bitmap_bits = (bitmap_size as u64) * 8u64;
 		let bitmap = BitVecJournal::from_parts(parts);
-		Bloom {
-			bitmap: bitmap,
-			bitmap_bits: bitmap_bits,
-			k_num: k_num,
-		}
+		Bloom { bitmap, bitmap_bits, k_num }
 	}
 
 	/// Create a new bloom filter structure.

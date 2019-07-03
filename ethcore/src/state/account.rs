@@ -471,7 +471,9 @@ impl Account {
 
 	/// Increase account balance.
 	pub fn add_balance(&mut self, x: &U256) {
+//		trace!(target:"dp","adding {} to {:?}, balance before: {}", x, self, self.balance);
 		self.balance = self.balance.saturating_add(*x);
+//		trace!(target:"dp","new balance: {}", self.balance);
 	}
 
 	/// Decrease account balance.

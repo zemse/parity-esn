@@ -458,7 +458,7 @@ impl<B: Backend> State<B> {
 
 	fn insert_cache(&self, address: &Address, account: AccountEntry) {
 		// Dirty account which is not in the cache means this is a new account.
-		// It goes directly into the checkpoint as there's nothing to rever to.
+		// It goes directly into the checkpoint as there's nothing to revert to.
 		//
 		// In all other cases account is read as clean first, and after that made
 		// dirty in and added to the checkpoint with `note_cache`.
@@ -741,16 +741,21 @@ impl<B: Backend> State<B> {
 
 	/// Add `incr` to the balance of account `a`.
 	pub fn add_balance(&mut self, a: &Address, incr: &U256, cleanup_mode: CleanupMode) -> TrieResult<()> {
-		trace!(target: "state", "add_balance({}, {}): {}", a, incr, self.balance(a)?);
 		let is_value_transfer = !incr.is_zero();
+//		trace!(target: "state", "add_balance({}, {}): {}, is_value_transfer: {}, exists? {}", a, incr, "self.balance(a)?", is_value_transfer, self.exists(a)?);
+//		let b = self.balance(a)?;
+//		self.exists(a)?;
 		if is_value_transfer || (cleanup_mode == CleanupMode::ForceCreate && !self.exists(a)?) {
 			self.require(a, false)?.add_balance(incr);
+//			trace!(target: "state", "back from require() with account={:?}", acc);
+//			trace!(target: "state", "back from add_balance(). New balance: {}", self.balance(a)?);
 		} else if let CleanupMode::TrackTouched(set) = cleanup_mode {
 			if self.exists(a)? {
 				set.insert(*a);
 				self.touch(a)?;
 			}
 		}
+//		assert_eq!(b+incr, self.balance(a)?);
 		Ok(())
 	}
 
@@ -893,7 +898,10 @@ impl<B: Backend> State<B> {
 					account.commit_code(account_db.as_hash_db_mut());
 				}
 				if !account.is_empty() {
+					trace!(target:"dp", "commit: inserting {} in the bloom", address);
 					self.db.note_non_null_account(address);
+				} else {
+					trace!(target:"dp", "commit: Account is empty, Not inserting {} in the bloom", address);
 				}
 			}
 		}
@@ -1189,7 +1197,12 @@ impl<B: Backend> State<B> {
 
 	/// Pull account `a` in our cache from the trie DB. `require_code` requires that the code be cached, too.
 	fn require<'a>(&'a self, a: &Address, require_code: bool) -> TrieResult<RefMut<'a, Account>> {
-		self.require_or_from(a, require_code, || Account::new_basic(0u8.into(), self.account_start_nonce), |_| {})
+		self.require_or_from(a, require_code, || {
+			trace!(target:"dp", "require, default: a={}, require_code={}, account_start_nonce={}", a, require_code, self.account_start_nonce);
+			Account::new_basic(0u8.into(), self.account_start_nonce)
+		}, |_| {
+			trace!(target:"dp", "require, NOT default: a={}, require_code={}, account_start_nonce={}", a, require_code, self.account_start_nonce);
+		})
 	}
 
 	/// Pull account `a` in our cache from the trie DB. `require_code` requires that the code be cached, too.
@@ -1198,16 +1211,23 @@ impl<B: Backend> State<B> {
 		where F: FnOnce() -> Account, G: FnOnce(&mut Account),
 	{
 		let contains_key = self.cache.borrow().contains_key(a);
+		trace!(target:"dp", "require_or_from: contains_key {}: {}", a, contains_key);
 		if !contains_key {
 			match self.db.get_cached_account(a) {
-				Some(acc) => self.insert_cache(a, AccountEntry::new_clean_cached(acc)),
+				Some(acc) => {
+					trace!(target:"dp", "require_or_from: in cache.");
+					self.insert_cache(a, AccountEntry::new_clean_cached(acc))
+				},
 				None => {
+					trace!(target:"dp", "require_or_from: {} not in cache", a);
 					let maybe_acc = if !self.db.is_known_null(a) {
+						trace!(target:"dp", "require_or_from: {} not in cache and NOT is_known_null –> lookup account", a);
 						let db = &self.db.as_hash_db();
 						let db = self.factories.trie.readonly(db, &self.root)?;
 						let from_rlp = |b:&[u8]| { Account::from_rlp(b).expect("decoding db value failed") };
 						AccountEntry::new_clean(db.get_with(a.as_bytes(), from_rlp)?)
 					} else {
+						trace!(target:"dp", "require_or_from: {} not in cache and is_known_null –> new account", a);
 						AccountEntry::new_clean(None)
 					};
 					self.insert_cache(a, maybe_acc);
@@ -1238,7 +1258,7 @@ impl<B: Backend> State<B> {
 				return Err(Box::new(TrieError::IncompleteDatabase(H256::from(*a))))
 			}
 		}
-
+		trace!(target:"dp", "require_or_from: returning account={:?}", account);
 		Ok(account)
 	}
 
