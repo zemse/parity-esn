@@ -17,12 +17,14 @@
 //! General error types for use in parity-ethereum.
 
 mod block_error;
+mod call_error;
 mod engine_error;
 mod ethcore_error;
 mod snapshot_error;
 
 pub use self::{
 	block_error::{BlockError, ImportError},
+	call_error::CallError,
 	engine_error::EngineError,
 	ethcore_error::{EthcoreError, ExecutionError, EthcoreResult},
 	snapshot_error::SnapshotError,

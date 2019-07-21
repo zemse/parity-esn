@@ -22,7 +22,7 @@ use trace::LocalizedTrace;
 use ethcore::client::TestBlockChainClient;
 use ethereum_types::{Address, H256};
 
-use types::transaction::CallError;
+use types::errors::CallError;
 use vm::CallType;
 
 use jsonrpc_core::IoHandler;

@@ -18,18 +18,15 @@
 
 use std::ops::Deref;
 
+use bytes::Bytes;
 use ethereum_types::{H256, H160, Address, U256, BigEndianHash};
 use ethjson;
 use ethkey::{self, Signature, Secret, Public, recover, public_to_address};
 use hash::keccak;
 use parity_util_mem::MallocSizeOf;
-
-use rlp::{self, RlpStream, Rlp, DecoderError, Encodable};
-
+use rlp::{self, RlpStream, Rlp, DecoderError};
 use transaction::error;
-
-type Bytes = Vec<u8>;
-type BlockNumber = u64;
+use crate::BlockNumber;
 
 /// Fake address for unsigned transactions as defined by EIP-86.
 pub const UNSIGNED_SENDER: Address = H160([0xff; 20]);
@@ -48,7 +45,9 @@ pub enum Action {
 }
 
 impl Default for Action {
-	fn default() -> Action { Action::Create }
+	fn default() -> Action {
+		Action::Create
+	}
 }
 
 impl rlp::Decodable for Action {
@@ -70,13 +69,42 @@ impl rlp::Encodable for Action {
 	}
 }
 
-/// Transaction activation condition.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum Condition {
-	/// Valid at this block number or later.
-	Number(BlockNumber),
-	/// Valid at this unix time or later.
-	Timestamp(u64),
+/// Append object with a without signature into RLP stream
+fn rlp_append_unsigned_transaction(s: &mut RlpStream, tx: &Transaction, chain_id: Option<u64>) {
+	s.begin_list(if chain_id.is_none() { 6 } else { 9 });
+	s.append(&tx.nonce);
+	s.append(&tx.gas_price);
+	s.append(&tx.gas);
+	s.append(&tx.action);
+	s.append(&tx.value);
+	s.append(&tx.data);
+	if let Some(n) = chain_id {
+		s.append(&n);
+		s.append(&0u8);
+		s.append(&0u8);
+	}
+}
+
+/// Append object with a signature into RLP stream
+fn rlp_append_sealed_transaction(stream: &mut RlpStream, tx: &Transaction, v: u64, r: U256, s: U256) {
+	stream.begin_list(9);
+	stream.append(&tx.nonce);
+	stream.append(&tx.gas_price);
+	stream.append(&tx.gas);
+	stream.append(&tx.action);
+	stream.append(&tx.value);
+	stream.append(&tx.data);
+	stream.append(&v);
+	stream.append(&r);
+	stream.append(&s);
+}
+
+fn rlp_and_hash(tx: &Transaction, v: u64, r: U256, s: U256) -> (Vec<u8>, H256) {
+	let mut stream = RlpStream::new();
+	rlp_append_sealed_transaction(&mut stream, tx, v, r, s);
+	let rlp = stream.drain();
+	let hash = keccak(&rlp);
+	(rlp, hash)
 }
 
 /// Replay protection logic for v part of transaction's signature
@@ -116,24 +144,6 @@ pub struct Transaction {
 	pub data: Bytes,
 }
 
-impl Transaction {
-	/// Append object with a without signature into RLP stream
-	pub fn rlp_append_unsigned_transaction(&self, s: &mut RlpStream, chain_id: Option<u64>) {
-		s.begin_list(if chain_id.is_none() { 6 } else { 9 });
-		s.append(&self.nonce);
-		s.append(&self.gas_price);
-		s.append(&self.gas);
-		s.append(&self.action);
-		s.append(&self.value);
-		s.append(&self.data);
-		if let Some(n) = chain_id {
-			s.append(&n);
-			s.append(&0u8);
-			s.append(&0u8);
-		}
-	}
-}
-
 impl From<ethjson::state::Transaction> for SignedTransaction {
 	fn from(t: ethjson::state::Transaction) -> Self {
 		let to: Option<ethjson::hash::Address> = t.to.into();
@@ -159,23 +169,32 @@ impl From<ethjson::state::Transaction> for SignedTransaction {
 impl From<ethjson::transaction::Transaction> for UnverifiedTransaction {
 	fn from(t: ethjson::transaction::Transaction) -> Self {
 		let to: Option<ethjson::hash::Address> = t.to.into();
-		UnverifiedTransaction {
-			unsigned: Transaction {
-				nonce: t.nonce.into(),
-				gas_price: t.gas_price.into(),
-				gas: t.gas_limit.into(),
-				action: match to {
-					Some(to) => Action::Call(to.into()),
-					None => Action::Create
-				},
-				value: t.value.into(),
-				data: t.data.into(),
+
+		let unsigned = Transaction {
+			nonce: t.nonce.into(),
+			gas_price: t.gas_price.into(),
+			gas: t.gas_limit.into(),
+			action: match to {
+				Some(to) => Action::Call(to.into()),
+				None => Action::Create
 			},
-			r: t.r.into(),
-			s: t.s.into(),
-			v: t.v.into(),
-			hash: H256::zero(),
-		}.compute_hash()
+			value: t.value.into(),
+			data: t.data.into(),
+		};
+
+		let r = t.r.into();
+		let s = t.s.into();
+		let v = t.v.into();
+		let (rlp, hash) = rlp_and_hash(&unsigned, v, r, s);
+
+		UnverifiedTransaction {
+			unsigned,
+			r,
+			s,
+			v,
+			rlp,
+			hash,
+		}
 	}
 }
 
@@ -183,13 +202,13 @@ impl Transaction {
 	/// The message hash of the transaction.
 	pub fn hash(&self, chain_id: Option<u64>) -> H256 {
 		let mut stream = RlpStream::new();
-		self.rlp_append_unsigned_transaction(&mut stream, chain_id);
+		rlp_append_unsigned_transaction(&mut stream, self, chain_id);
 		keccak(stream.as_raw())
 	}
 
 	/// Signs the transaction as coming from `sender`.
 	pub fn sign(self, secret: &Secret, chain_id: Option<u64>) -> SignedTransaction {
-		let sig = ::ethkey::sign(secret, &self.hash(chain_id))
+		let sig = ethkey::sign(secret, &self.hash(chain_id))
 			.expect("data is valid and context has signing capabilities; qed");
 		SignedTransaction::new(self.with_signature(sig, chain_id))
 			.expect("secret is valid so it's recoverable")
@@ -197,37 +216,55 @@ impl Transaction {
 
 	/// Signs the transaction with signature.
 	pub fn with_signature(self, sig: Signature, chain_id: Option<u64>) -> UnverifiedTransaction {
+		let r = sig.r().into();
+		let s = sig.s().into();
+		let v = signature::add_chain_replay_protection(sig.v() as u64, chain_id);
+		let (rlp, hash) = rlp_and_hash(&self, v, r, s);
+
 		UnverifiedTransaction {
 			unsigned: self,
-			r: sig.r().into(),
-			s: sig.s().into(),
-			v: signature::add_chain_replay_protection(sig.v() as u64, chain_id),
-			hash: H256::zero(),
-		}.compute_hash()
+			v,
+			r,
+			s,
+			rlp,
+			hash,
+		}
 	}
 
 	/// Useful for test incorrectly signed transactions.
 	#[cfg(test)]
 	pub fn invalid_sign(self) -> UnverifiedTransaction {
+		let v = 0;
+		let r = U256::one();
+		let s = U256::one();
+		let (rlp, hash) = rlp_and_hash(&self, v, r, s);
+
 		UnverifiedTransaction {
 			unsigned: self,
-			r: U256::one(),
-			s: U256::one(),
-			v: 0,
-			hash: H256::zero(),
-		}.compute_hash()
+			v,
+			r,
+			s,
+			rlp,
+			hash,
+		}
 	}
 
 	/// Specify the sender; this won't survive the serialize/deserialize process, but can be cloned.
 	pub fn fake_sign(self, from: Address) -> SignedTransaction {
+		let v = 0;
+		let r = U256::one();
+		let s = U256::one();
+		let (rlp, hash) = rlp_and_hash(&self, v, r, s);
+
 		SignedTransaction {
 			transaction: UnverifiedTransaction {
 				unsigned: self,
-				r: U256::one(),
-				s: U256::one(),
-				v: 0,
-				hash: H256::zero(),
-			}.compute_hash(),
+				r,
+				s,
+				v,
+				rlp,
+				hash,
+			},
 			sender: from,
 			public: None,
 		}
@@ -235,14 +272,20 @@ impl Transaction {
 
 	/// Add EIP-86 compatible empty signature.
 	pub fn null_sign(self, chain_id: u64) -> SignedTransaction {
+		let v = chain_id;
+		let r = U256::zero();
+		let s = U256::zero();
+		let (rlp, hash) = rlp_and_hash(&self, v, r, s);
+
 		SignedTransaction {
 			transaction: UnverifiedTransaction {
 				unsigned: self,
-				r: U256::zero(),
-				s: U256::zero(),
-				v: chain_id,
-				hash: H256::zero(),
-			}.compute_hash(),
+				v,
+				r,
+				s,
+				rlp,
+				hash,
+			},
 			sender: UNSIGNED_SENDER,
 			public: None,
 		}
@@ -261,6 +304,8 @@ pub struct UnverifiedTransaction {
 	r: U256,
 	/// The S field of the signature; helps describe the point on the curve.
 	s: U256,
+	/// Transaction rlp
+	rlp: Vec<u8>,
 	/// Hash of the transaction
 	hash: H256,
 }
@@ -291,23 +336,19 @@ impl rlp::Decodable for UnverifiedTransaction {
 			v: d.val_at(6)?,
 			r: d.val_at(7)?,
 			s: d.val_at(8)?,
-			hash: hash,
+			rlp: d.as_raw().to_vec(),
+			hash,
 		})
 	}
 }
 
 impl rlp::Encodable for UnverifiedTransaction {
-	fn rlp_append(&self, s: &mut RlpStream) { self.rlp_append_sealed_transaction(s) }
+	fn rlp_append(&self, s: &mut RlpStream) {
+		s.append_raw(&self.rlp, 1);
+	}
 }
 
 impl UnverifiedTransaction {
-	/// Used to compute hash of created transactions
-	fn compute_hash(mut self) -> UnverifiedTransaction {
-		let hash = keccak(&*self.rlp_bytes());
-		self.hash = hash;
-		self
-	}
-
 	/// Checks is signature is empty.
 	pub fn is_unsigned(&self) -> bool {
 		self.r.is_zero() && self.s.is_zero()
@@ -321,30 +362,20 @@ impl UnverifiedTransaction {
 		}
 	}
 
-	/// Append object with a signature into RLP stream
-	fn rlp_append_sealed_transaction(&self, s: &mut RlpStream) {
-		s.begin_list(9);
-		s.append(&self.nonce);
-		s.append(&self.gas_price);
-		s.append(&self.gas);
-		s.append(&self.action);
-		s.append(&self.value);
-		s.append(&self.data);
-		s.append(&self.v);
-		s.append(&self.r);
-		s.append(&self.s);
-	}
-
 	///	Reference to unsigned part of this transaction.
 	pub fn as_unsigned(&self) -> &Transaction {
 		&self.unsigned
 	}
 
 	/// Returns standardized `v` value (0, 1 or 4 (invalid))
-	pub fn standard_v(&self) -> u8 { signature::check_replay_protection(self.v) }
+	pub fn standard_v(&self) -> u8 {
+		signature::check_replay_protection(self.v)
+	}
 
 	/// The `v` value that appears in the RLP.
-	pub fn original_v(&self) -> u64 { self.v }
+	pub fn original_v(&self) -> u64 {
+		self.v
+	}
 
 	/// The chain ID, or `None` if this is a global transaction.
 	pub fn chain_id(&self) -> Option<u64> {
@@ -412,7 +443,9 @@ pub struct SignedTransaction {
 }
 
 impl rlp::Encodable for SignedTransaction {
-	fn rlp_append(&self, s: &mut RlpStream) { self.transaction.rlp_append_sealed_transaction(s) }
+	fn rlp_append(&self, s: &mut RlpStream) {
+		s.append_raw(&self.rlp, 1);
+	}
 }
 
 impl Deref for SignedTransaction {
@@ -456,11 +489,6 @@ impl SignedTransaction {
 	/// Returns a public key of the sender.
 	pub fn public_key(&self) -> Option<Public> {
 		self.public
-	}
-
-	/// Checks is signature is empty.
-	pub fn is_unsigned(&self) -> bool {
-		self.transaction.is_unsigned()
 	}
 
 	/// Deconstructs this transaction back into `UnverifiedTransaction`
@@ -509,39 +537,6 @@ impl Deref for LocalizedTransaction {
 	}
 }
 
-/// Queued transaction with additional information.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct PendingTransaction {
-	/// Signed transaction data.
-	pub transaction: SignedTransaction,
-	/// To be activated at this condition. `None` for immediately.
-	pub condition: Option<Condition>,
-}
-
-impl PendingTransaction {
-	/// Create a new pending transaction from signed transaction.
-	pub fn new(signed: SignedTransaction, condition: Option<Condition>) -> Self {
-		PendingTransaction {
-			transaction: signed,
-			condition: condition,
-		}
-	}
-}
-
-impl Deref for PendingTransaction {
-	type Target = SignedTransaction;
-
-	fn deref(&self) -> &SignedTransaction { &self.transaction }
-}
-
-impl From<SignedTransaction> for PendingTransaction {
-	fn from(t: SignedTransaction) -> Self {
-		PendingTransaction {
-			transaction: t,
-			condition: None,
-		}
-	}
-}
 
 #[cfg(test)]
 mod tests {

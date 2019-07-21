@@ -26,7 +26,7 @@ use evm::Schedule;
 use itertools::Itertools;
 use kvdb::DBValue;
 use types::{
-	transaction::{self, LocalizedTransaction, SignedTransaction, CallError},
+	transaction::{self, LocalizedTransaction, SignedTransaction},
 	BlockNumber,
 	basic_account::BasicAccount,
 	block_status::BlockStatus,
@@ -35,6 +35,7 @@ use types::{
 	encoded,
 	errors::EthcoreError as Error,
 	errors::EthcoreResult,
+	errors::CallError,
 	filter::Filter,
 	header::Header,
 	ids::*,

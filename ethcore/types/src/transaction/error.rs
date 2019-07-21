@@ -14,28 +14,30 @@
 // You should have received a copy of the GNU General Public License
 // along with Parity Ethereum.  If not, see <http://www.gnu.org/licenses/>.
 
-use std::{fmt, error};
-
+use std::error;
 use ethereum_types::U256;
 use ethkey;
 use rlp;
 use unexpected::OutOfBounds;
 
-use errors::ExecutionError;
-
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Display)]
 /// Errors concerning transaction processing.
 pub enum Error {
 	/// Transaction is already imported to the queue
+	#[display(fmt = "Already imported")]
 	AlreadyImported,
 	/// Transaction is not valid anymore (state already has higher nonce)
+	#[display(fmt = "No longer valid")]
 	Old,
 	/// Transaction has too low fee
 	/// (there is already a transaction with the same sender-nonce but higher gas price)
+	#[display(fmt = "Gas price too low to replace")]
 	TooCheapToReplace,
 	/// Transaction was not imported to the queue because limit has been reached.
+	#[display(fmt = "Transaction limit reached")]
 	LimitReached,
 	/// Transaction's gas price is below threshold.
+	#[display(fmt = "Insufficient gas price. Min = {}, Given = {}", minimal, got)]
 	InsufficientGasPrice {
 		/// Minimal expected gas price
 		minimal: U256,
@@ -43,6 +45,7 @@ pub enum Error {
 		got: U256,
 	},
 	/// Transaction's gas is below currently set minimal gas requirement.
+	#[display(fmt = "Insufficient gas. Min = {}, Given = {}", minimal, got)]
 	InsufficientGas {
 		/// Minimal expected gas
 		minimal: U256,
@@ -50,6 +53,7 @@ pub enum Error {
 		got: U256,
 	},
 	/// Sender doesn't have enough funds to pay for this transaction
+	#[display(fmt = "Insufficient balance for transaction. Balance = {}, Cost = {}", balance, cost)]
 	InsufficientBalance {
 		/// Senders balance
 		balance: U256,
@@ -57,6 +61,7 @@ pub enum Error {
 		cost: U256,
 	},
 	/// Transactions gas is higher then current gas limit
+	#[display(fmt = "Gas limit exceeded. Limit = {}, Given = {}", limit, got)]
 	GasLimitExceeded {
 		/// Current gas limit
 		limit: U256,
@@ -64,22 +69,31 @@ pub enum Error {
 		got: U256,
 	},
 	/// Transaction's gas limit (aka gas) is invalid.
+	#[display(fmt = "Invalid gas limit. {}", _0)]
 	InvalidGasLimit(OutOfBounds<U256>),
 	/// Transaction sender is banned.
+	#[display(fmt = "Sender is temporarily banned.")]
 	SenderBanned,
 	/// Transaction receipient is banned.
+	#[display(fmt = "Recipient is temporarily banned.")]
 	RecipientBanned,
 	/// Contract creation code is banned.
+	#[display(fmt = "Contract code is temporarily banned.")]
 	CodeBanned,
 	/// Invalid chain ID given.
+	#[display(fmt = "Transaction of this chain ID is not allowed on this chain.")]
 	InvalidChainId,
 	/// Not enough permissions given by permission contract.
+	#[display(fmt = "Sender does not have permissions to execute this type of transaction.")]
 	NotAllowed,
 	/// Signature error
+	#[display(fmt = "Transaction has invalid signature: {}.", _0)]
 	InvalidSignature(String),
 	/// Transaction too big
+	#[display(fmt = "Transaction is too big.")]
 	TooBig,
 	/// Invalid RLP encoding
+	#[display(fmt = "Transaction has invalid RLP structure: {}.", _0)]
 	InvalidRlp(String),
 }
 
@@ -95,77 +109,8 @@ impl From<rlp::DecoderError> for Error {
 	}
 }
 
-impl fmt::Display for Error {
-	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-		use self::Error::*;
-		let msg = match *self {
-			AlreadyImported => "Already imported".into(),
-			Old => "No longer valid".into(),
-			TooCheapToReplace => "Gas price too low to replace".into(),
-			LimitReached => "Transaction limit reached".into(),
-			InsufficientGasPrice { minimal, got } =>
-				format!("Insufficient gas price. Min={}, Given={}", minimal, got),
-			InsufficientGas { minimal, got } =>
-				format!("Insufficient gas. Min={}, Given={}", minimal, got),
-			InsufficientBalance { balance, cost } =>
-				format!("Insufficient balance for transaction. Balance={}, Cost={}",
-					balance, cost),
-			GasLimitExceeded { limit, got } =>
-				format!("Gas limit exceeded. Limit={}, Given={}", limit, got),
-			InvalidGasLimit(ref err) => format!("Invalid gas limit. {}", err),
-			SenderBanned => "Sender is temporarily banned.".into(),
-			RecipientBanned => "Recipient is temporarily banned.".into(),
-			CodeBanned => "Contract code is temporarily banned.".into(),
-			InvalidChainId => "Transaction of this chain ID is not allowed on this chain.".into(),
-			InvalidSignature(ref err) => format!("Transaction has invalid signature: {}.", err),
-			NotAllowed => "Sender does not have permissions to execute this type of transaction".into(),
-			TooBig => "Transaction too big".into(),
-			InvalidRlp(ref err) => format!("Transaction has invalid RLP structure: {}.", err),
-		};
-
-		f.write_fmt(format_args!("Transaction error ({})", msg))
-	}
-}
-
 impl error::Error for Error {
 	fn description(&self) -> &str {
 		"Transaction error"
 	}
 }
-
-/// Result of executing the transaction.
-#[derive(PartialEq, Debug, Clone)]
-pub enum CallError {
-	/// Couldn't find the transaction in the chain.
-	TransactionNotFound,
-	/// Couldn't find requested block's state in the chain.
-	StatePruned,
-	/// Couldn't find an amount of gas that didn't result in an exception.
-	Exceptional(vm::Error),
-	/// Corrupt state.
-	StateCorrupt,
-	/// Error executing.
-	Execution(ExecutionError),
-}
-
-impl From<ExecutionError> for CallError {
-	fn from(error: ExecutionError) -> Self {
-		CallError::Execution(error)
-	}
-}
-
-impl fmt::Display for CallError {
-	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-		use self::CallError::*;
-		let msg = match *self {
-			TransactionNotFound => "Transaction couldn't be found in the chain".into(),
-			StatePruned => "Couldn't find the transaction block's state in the chain".into(),
-			Exceptional(ref e) => format!("An exception ({}) happened in the execution", e),
-			StateCorrupt => "Stored state found to be corrupted.".into(),
-			Execution(ref e) => format!("{}", e),
-		};
-
-		f.write_fmt(format_args!("Transaction execution error ({}).", msg))
-	}
-}
-

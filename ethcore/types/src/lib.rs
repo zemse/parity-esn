@@ -50,6 +50,7 @@ extern crate unexpected;
 extern crate rlp_derive;
 extern crate parity_util_mem;
 extern crate parity_util_mem as malloc_size_of;
+extern crate vm;
 
 #[macro_use]
 pub mod views;

@@ -18,6 +18,8 @@
 
 mod error;
 mod transaction;
+mod pending;
 
-pub use self::error::{Error, CallError};
+pub use self::error::Error;
 pub use self::transaction::*;
+pub use self::pending::{PendingTransaction, Condition};

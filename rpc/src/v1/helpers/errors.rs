@@ -28,8 +28,7 @@ use light::on_demand::error::{Error as OnDemandError};
 use ethcore::client::BlockChainClient;
 use types::{
 	blockchain_info::BlockChainInfo,
-	errors::{EthcoreError},
-	transaction::CallError,
+	errors::{EthcoreError, CallError},
 };
 use v1::types::BlockNumber;
 use v1::impls::EthClientOptions;
