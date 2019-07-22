@@ -148,7 +148,7 @@ impl MinerService for TestMinerService {
 		let transactions: Vec<_> = transactions.into_iter().map(|tx| SignedTransaction::new(tx).unwrap()).collect();
 		self.imported_transactions.lock().extend_from_slice(&transactions);
 
-		for sender in transactions.iter().map(|tx| tx.sender()) {
+		for sender in transactions.iter().map(|tx| tx.sender) {
 			let nonce = self.next_nonce(chain, &sender);
 			self.next_nonces.write().insert(sender, nonce);
 		}
@@ -171,7 +171,7 @@ impl MinerService for TestMinerService {
 		-> Result<(), transaction::Error> {
 
 		// keep the pending nonces up to date
-		let sender = pending.transaction.sender();
+		let sender = pending.transaction.sender;
 		let nonce = self.next_nonce(chain, &sender);
 		self.next_nonces.write().insert(sender, nonce);
 

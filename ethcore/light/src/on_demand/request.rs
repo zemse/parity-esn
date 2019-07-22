@@ -328,7 +328,7 @@ impl From<Request> for CheckedRequest {
 			Request::Execution(req) => {
 				let net_req = net_request::IncompleteExecutionRequest {
 					block_hash: req.header.field(),
-					from: req.tx.sender(),
+					from: req.tx.sender,
 					gas: req.tx.gas,
 					gas_price: req.tx.gas_price,
 					action: req.tx.action.clone(),

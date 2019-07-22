@@ -82,7 +82,7 @@ impl Private for PrivateClient {
 			.map_err(errors::private_message)?;
 		let tx_hash = transaction.hash(None);
 		let request = TransactionRequest {
-			from: Some(signed_transaction.sender()),
+			from: Some(signed_transaction.sender),
 			to: None,
 			nonce: Some(transaction.nonce),
 			gas_price: Some(transaction.gas_price),

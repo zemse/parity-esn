@@ -509,7 +509,7 @@ impl Miner {
 
 			let transaction = tx.signed().clone();
 			let hash = transaction.hash();
-			let sender = transaction.sender();
+			let sender = transaction.sender;
 
 			// Re-verify transaction again vs current state.
 			let result = client.verify_signed(&transaction)
@@ -1000,7 +1000,7 @@ impl miner::MinerService for Miner {
 	) -> Result<(), transaction::Error> {
 		// treat the tx as local if the option is enabled, if we have the account, or if
 		// the account is specified as a Prioritized Local Addresses
-		let sender = pending.sender();
+		let sender = pending.sender;
 		let treat_as_local = trusted
 			|| !self.options.tx_queue_no_unfamiliar_locals
 			|| self.accounts.is_local(&sender);
@@ -1120,7 +1120,7 @@ impl miner::MinerService for Miner {
 					// Filter by sender
 					.filter(|tx| {
 						filter.as_ref().map_or(true, |filter| {
-							let sender = tx.signed().sender();
+							let sender = tx.signed().sender;
 							match filter.from {
 								Eq(value) => sender == value,
 								// Will always occure on `Any`, other operators
@@ -1222,7 +1222,7 @@ impl miner::MinerService for Miner {
 						contract_address: match tx.action {
 							Action::Call(_) => None,
 							Action::Create => {
-								let sender = tx.sender();
+								let sender = tx.sender;
 								Some(contract_address(CreateContractAddress::FromSenderAndNonce, &sender, &tx.nonce, &tx.data).0)
 							}
 						},
@@ -1689,7 +1689,8 @@ mod tests {
 
 		// when - 2nd part: create a local transaction from account_provider.
 		// Borrow the transaction used before & sign with our generated keypair.
-		let local_transaction = transaction.deconstruct().0.as_unsigned().clone().sign(keypair.secret(), Some(TEST_CHAIN_ID));
+		//let local_transaction = transaction.deconstruct().0.as_unsigned().clone().sign(keypair.secret(), Some(TEST_CHAIN_ID));
+		let local_transaction = transaction.transaction.transaction.clone().sign(keypair.secret(), Some(TEST_CHAIN_ID));
 		let res2 = miner.import_claimed_local_transaction(&client, PendingTransaction::new(local_transaction, None), false);
 
 		// then - 2nd part: we add on the results from the last pending block.
@@ -1712,7 +1713,7 @@ mod tests {
 			},
 			GasPricer::new_fixed(0u64.into()),
 			&Spec::new_test(),
-			HashSet::from_iter(vec![transaction.sender()].into_iter()),
+			HashSet::from_iter(vec![transaction.sender].into_iter()),
 		);
 		let best_block = 0;
 

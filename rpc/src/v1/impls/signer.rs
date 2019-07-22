@@ -127,7 +127,7 @@ impl<D: Dispatcher + 'static> SignerClient<D> {
 	{
 		let signed_transaction = Rlp::new(&bytes.0).as_val().map_err(errors::rlp)?;
 		let signed_transaction = SignedTransaction::new(signed_transaction).map_err(|e| errors::invalid_params("Invalid signature.", e))?;
-		let sender = signed_transaction.sender();
+		let sender = signed_transaction.sender;
 
 		// Verification
 		let sender_matches = sender == request.from;

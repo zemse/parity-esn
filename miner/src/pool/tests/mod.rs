@@ -66,7 +66,7 @@ fn should_return_correct_nonces_when_dropped_because_of_limit() {
 		PrioritizationStrategy::GasPriceOnly,
 	);
 	let (tx1, tx2) = Tx::gas_price(2).signed_pair();
-	let sender = tx1.sender();
+	let sender = tx1.sender;
 	let nonce = tx1.nonce;
 
 	// when
@@ -82,7 +82,7 @@ fn should_return_correct_nonces_when_dropped_because_of_limit() {
 	// when
 	let tx1 = Tx::gas_price(2).signed();
 	let tx2 = Tx::gas_price(2).signed();
-	let sender = tx2.sender();
+	let sender = tx2.sender;
 	let tx3 = Tx::gas_price(1).signed();
 	let tx4 = Tx::gas_price(3).signed();
 	let res = txq.import(TestClient::new(), vec![tx1, tx2].retracted());
@@ -120,7 +120,7 @@ fn should_never_drop_local_transactions_from_different_senders() {
 		PrioritizationStrategy::GasPriceOnly,
 	);
 	let (tx1, tx2) = Tx::gas_price(2).signed_pair();
-	let sender = tx1.sender();
+	let sender = tx1.sender;
 	let nonce = tx1.nonce;
 
 	// when
@@ -160,7 +160,7 @@ fn should_handle_same_transaction_imported_twice_with_different_state_nonces() {
 	let res = txq.import(client.clone(), vec![tx].local());
 	assert_eq!(res, vec![Ok(())]);
 	// next_nonce === None -> transaction is in future
-	assert_eq!(txq.next_nonce(client.clone(), &tx2.sender()), None);
+	assert_eq!(txq.next_nonce(client.clone(), &tx2.sender), None);
 
 	// now import second transaction to current
 	let res = txq.import(TestClient::new(), vec![tx2.local()]);
@@ -185,7 +185,7 @@ fn should_move_all_transactions_from_future() {
 	let res = txq.import(client.clone(), vec![tx.local()]);
 	assert_eq!(res, vec![Ok(())]);
 	// next_nonce === None -> transaction is in future
-	assert_eq!(txq.next_nonce(client.clone(), &tx2.sender()), None);
+	assert_eq!(txq.next_nonce(client.clone(), &tx2.sender), None);
 
 	// now import second transaction to current
 	let res = txq.import(client.clone(), vec![tx2.local()]);
@@ -281,7 +281,7 @@ fn should_prioritize_local_transactions_within_same_nonce_height() {
 	// the second one has same nonce but higher `gas_price`
 	let tx2 = Tx::gas_price(2).signed();
 	let (hash, hash2) = (tx.hash(), tx2.hash());
-	let client = TestClient::new().with_local(&tx.sender());
+	let client = TestClient::new().with_local(&tx.sender);
 
 	// when
 	// first insert the one with higher gas price
@@ -495,7 +495,7 @@ fn should_prefer_current_transactions_when_hitting_the_limit() {
 	);
 	let (tx, tx2) = Tx::default().signed_pair();
 	let hash = tx.hash();
-	let sender = tx.sender();
+	let sender = tx.sender;
 
 	let res = txq.import(TestClient::new(), vec![tx2.unverified()]);
 	assert_eq!(res, vec![Ok(())]);
@@ -605,7 +605,7 @@ fn should_return_correct_nonce_when_transactions_from_given_address_exist() {
 	// given
 	let txq = new_queue();
 	let tx = Tx::default().signed();
-	let from = tx.sender();
+	let from = tx.sender;
 	let nonce = tx.nonce;
 
 	// when
@@ -620,7 +620,7 @@ fn should_return_valid_last_nonce_after_cull() {
 	// given
 	let txq = new_queue();
 	let (tx1, _, tx2) = Tx::default().signed_triple();
-	let sender = tx1.sender();
+	let sender = tx1.sender;
 
 	// when
 	// Second should go to future
@@ -643,7 +643,7 @@ fn should_return_true_if_there_is_local_transaction_pending() {
 	let txq = new_queue();
 	let (tx1, tx2) = Tx::default().signed_pair();
 	assert_eq!(txq.has_local_pending_transactions(), false);
-	let client = TestClient::new().with_local(&tx1.sender());
+	let client = TestClient::new().with_local(&tx1.sender);
 
 	// when
 	let res = txq.import(client.clone(), vec![tx1.unverified(), tx2.local()]);
@@ -740,7 +740,7 @@ fn should_accept_local_service_transaction() {
 	// when
 	let res = txq.import(
 		TestClient::new()
-			.with_local(&tx.sender()),
+			.with_local(&tx.sender),
 		vec![tx.local()]
 	);
 	assert_eq!(res, vec![Ok(())]);
@@ -1056,7 +1056,7 @@ fn should_not_reject_early_in_case_gas_price_is_less_than_min_effective() {
 	);
 	// when
 	let tx1 = Tx::gas_price(2).signed();
-	let client = TestClient::new().with_local(&tx1.sender());
+	let client = TestClient::new().with_local(&tx1.sender);
 	let res = txq.import(client.clone(), vec![tx1.unverified()]);
 
 	// then
@@ -1066,7 +1066,7 @@ fn should_not_reject_early_in_case_gas_price_is_less_than_min_effective() {
 
 	// when
 	let tx1 = Tx::gas_price(1).signed();
-	let client = TestClient::new().with_local(&tx1.sender());
+	let client = TestClient::new().with_local(&tx1.sender);
 	let res = txq.import(client.clone(), vec![tx1.unverified()]);
 
 	// then

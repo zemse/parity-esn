@@ -86,7 +86,7 @@ impl TestClient {
 		let tx = tx.into();
 		pool::VerifiedTransaction {
 			hash: tx.hash(),
-			sender: tx.sender(),
+			sender: tx.sender,
 			priority: pool::Priority::Regular,
 			transaction: tx,
 			insertion_id: 1,

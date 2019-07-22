@@ -216,7 +216,7 @@ impl Transaction {
 			block_hash: None,
 			block_number: None,
 			transaction_index: None,
-			from: t.sender(),
+			from: t.sender,
 			to: match t.action {
 				Action::Create => None,
 				Action::Call(ref address) => Some(*address)
@@ -226,11 +226,11 @@ impl Transaction {
 			gas: t.gas,
 			input: Bytes::new(t.data.clone()),
 			creates: match t.action {
-				Action::Create => Some(contract_address(scheme, &t.sender(), &t.nonce, &t.data).0),
+				Action::Create => Some(contract_address(scheme, &t.sender, &t.nonce, &t.data).0),
 				Action::Call(_) => None,
 			},
 			raw: ::rlp::encode(&t).into(),
-			public_key: t.public_key().map(Into::into),
+			public_key: t.public.map(Into::into),
 			chain_id: t.chain_id().map(U64::from),
 			standard_v: t.standard_v().into(),
 			v: t.original_v().into(),

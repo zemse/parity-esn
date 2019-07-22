@@ -259,7 +259,7 @@ impl<C: Client> txpool::Verifier<Transaction> for Verifier<C, ::pool::scoring::N
 			return Err(err)
 		}
 
-		let sender = transaction.sender();
+		let sender = transaction.sender;
 		let account_details = self.client.account_details(&sender);
 
 		if transaction.gas_price < self.options.minimal_gas_price {

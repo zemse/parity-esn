@@ -363,7 +363,7 @@ impl TestBlockChainClient {
 			nonce: U256::zero()
 		};
 		let signed_tx = tx.sign(keypair.secret(), None);
-		self.set_balance(signed_tx.sender(), 10_000_000_000_000_000_000u64.into());
+		self.set_balance(signed_tx.sender, 10_000_000_000_000_000_000u64.into());
 		let hash = signed_tx.hash();
 		let res = self.miner.import_external_transactions(self, vec![signed_tx.into()]);
 		let res = res.into_iter().next().unwrap();

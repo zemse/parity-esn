@@ -30,7 +30,10 @@ use types::{
 		params::CommonParams,
 	},
 	errors::{EngineError, EthcoreError as Error},
-	transaction::{self, SYSTEM_ADDRESS, UNSIGNED_SENDER, UnverifiedTransaction, SignedTransaction},
+	transaction::{
+		self, SYSTEM_ADDRESS, UNSIGNED_SENDER, UnverifiedTransaction,
+		SignedTransaction, BasicVerifiedTransaction
+	},
 };
 use vm::{CallType, ActionParams, ActionValue, ParamsType};
 use vm::{EnvInfo, Schedule};
@@ -330,7 +333,7 @@ impl Machine {
 	}
 
 	/// Does basic verification of the transaction.
-	pub fn verify_transaction_basic(&self, t: &UnverifiedTransaction, header: &Header) -> Result<(), transaction::Error> {
+	pub fn verify_transaction_basic(&self, t: UnverifiedTransaction, header: &Header) -> Result<BasicVerifiedTransaction, transaction::Error> {
 		let check_low_s = match self.ethash_extensions {
 			Some(ref ext) => header.number() >= ext.homestead_transition,
 			None => true,
@@ -343,9 +346,9 @@ impl Machine {
 		} else {
 			None
 		};
-		t.verify_basic(check_low_s, chain_id, false)?;
 
-		Ok(())
+		let tx = transaction::verify_basic(t, check_low_s, chain_id, false)?;
+		Ok(tx)
 	}
 
 	/// Does verification of the transaction against the parent state.

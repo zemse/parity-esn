@@ -55,7 +55,7 @@ use types::{
 		machine::{AuxiliaryData, AuxiliaryRequest},
 	},
 	errors::{EthcoreError as Error, EngineError},
-	transaction::{self, UnverifiedTransaction, SignedTransaction},
+	transaction::{self, UnverifiedTransaction, SignedTransaction, BasicVerifiedTransaction},
 };
 use snapshot::SnapshotComponents;
 use client::EngineClient;
@@ -422,7 +422,7 @@ pub trait Engine: Sync + Send {
 	///
 	/// TODO: Add flags for which bits of the transaction to check.
 	/// TODO: consider including State in the params.
-	fn verify_transaction_basic(&self, t: &UnverifiedTransaction, header: &Header) -> Result<(), transaction::Error> {
+	fn verify_transaction_basic(&self, t: UnverifiedTransaction, header: &Header) -> Result<BasicVerifiedTransaction, transaction::Error> {
 		self.machine().verify_transaction_basic(t, header)
 	}
 

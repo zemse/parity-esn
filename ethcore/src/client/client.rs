@@ -1609,11 +1609,11 @@ impl Call for Client {
 			(init, max, env_info)
 		};
 
-		let sender = t.sender();
+		let sender = t.sender;
 		let options = || TransactOptions::with_tracing().dont_check_nonce();
 
 		let exec = |gas| {
-			let mut tx = t.as_unsigned().clone();
+			let mut tx = t.transaction.transaction.clone();
 			tx.gas = gas;
 			let tx = tx.fake_sign(sender);
 
@@ -2744,7 +2744,7 @@ mod tests {
 			block_number: block_number,
 			block_hash: block_hash,
 			transaction_index: 1,
-			cached_sender: Some(tx1.sender()),
+			cached_sender: Some(tx1.sender),
 		};
 		let logs = vec![LogEntry {
 			address: Address::from_low_u64_be(5),
@@ -2767,7 +2767,7 @@ mod tests {
 
 		// then
 		assert_eq!(receipt, LocalizedReceipt {
-			from: tx1.sender().into(),
+			from: tx1.sender,
 			to: match tx1.action {
 				Action::Create => None,
 				Action::Call(ref address) => Some(address.clone().into())

@@ -152,7 +152,7 @@ impl fmt::Debug for TransactionQueue {
 impl TransactionQueue {
 	/// Import a pending transaction to be queued.
 	pub fn import(&mut self, tx: PendingTransaction) -> Result<ImportDestination, transaction::Error> {
-		let sender = tx.sender();
+		let sender = tx.sender;
 		let hash = tx.hash();
 		let nonce = tx.nonce;
 		let tx_info = TransactionInfo::from(&tx);

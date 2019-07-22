@@ -40,7 +40,7 @@ impl ServiceTransactionChecker {
 
 	/// Checks if given address in tx is whitelisted to send service transactions.
 	pub fn check<C: CallContract + RegistryInfo>(&self, client: &C, tx: &SignedTransaction) -> Result<bool, String> {
-		let sender = tx.sender();
+		let sender = tx.sender;
 		// Skip checking the contract if the transaction does not have zero gas price
 		if !tx.gas_price.is_zero() {
 			return Ok(false)

@@ -258,15 +258,15 @@ impl<'a> EvmTestClient<'a> {
 	) -> std::result::Result<TransactSuccess<T::Output, V::Output>, TransactErr> {
 		let initial_gas = transaction.gas;
 		// Verify transaction
-		let is_ok = transaction.verify_basic(true, None, false);
-		if let Err(error) = is_ok {
-			return Err(
-				TransactErr{
-					state_root: *self.state.root(),
-					error: error.into(),
-					end_state: (self.dump_state)(&self.state),
-				});
-		}
+		//let is_ok = transaction.verify_basic(true, None, false);
+		//if let Err(error) = is_ok {
+			//return Err(
+				//TransactErr{
+					//state_root: *self.state.root(),
+					//error: error.into(),
+					//end_state: (self.dump_state)(&self.state),
+				//});
+		//}
 
 		// Apply transaction
 		let result = self.state.apply_with_tracing(&env_info, self.spec.engine.machine(), &transaction, tracer, vm_tracer);
@@ -307,7 +307,7 @@ impl<'a> EvmTestClient<'a> {
 					vm_trace: result.vm_trace,
 					logs: result.receipt.logs,
 					contract_address: if let transaction::Action::Create = transaction.action {
-						Some(executive::contract_address(scheme, &transaction.sender(), &transaction.nonce, &transaction.data).0)
+						Some(executive::contract_address(scheme, &transaction.sender, &transaction.nonce, &transaction.data).0)
 					} else {
 						None
 					},

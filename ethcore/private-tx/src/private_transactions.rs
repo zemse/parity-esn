@@ -169,7 +169,7 @@ impl VerificationStore {
 		let verified_tx = verifier.verify_transaction(unverified)?;
 		let signed_tx: SignedTransaction = verified_tx.signed().clone();
 		let signed_hash = signed_tx.hash();
-		let signed_sender = signed_tx.sender();
+		let signed_sender = signed_tx.sender;
 		let verified = VerifiedPrivateTransaction {
 			private_transaction,
 			validator_account,

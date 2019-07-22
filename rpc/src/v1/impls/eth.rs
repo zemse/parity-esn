@@ -323,18 +323,16 @@ impl<C, SN: ?Sized, S: ?Sized, M, EM, T: StateInfo + 'static> EthClient<C, SN, S
 					// Verify if transaction signature is correct.
 					.and_then(|tx| SignedTransaction::new(tx.clone()).ok())
 					.map(|signed_tx| {
-						let (signed, sender, _) = signed_tx.deconstruct();
 						let block_hash = pending_block.header.hash();
 						let block_number = pending_block.header.number();
 						let transaction_index = index;
-						let cached_sender = Some(sender);
 
 						LocalizedTransaction {
-							signed,
+							signed: signed_tx.transaction,
 							block_number,
 							block_hash,
 							transaction_index,
-							cached_sender,
+							cached_sender: Some(signed_tx.sender),
 						}
 					})
 					.map(Transaction::from_localized);

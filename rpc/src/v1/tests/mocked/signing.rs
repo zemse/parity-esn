@@ -346,7 +346,7 @@ fn should_add_sign_transaction_to_the_queue() {
 		&format!("\"hash\":\"0x{:x}\",", t.hash()) +
 		r#""input":"0x","# +
 		r#""nonce":"0x1","# +
-		&format!("\"publicKey\":\"0x{:x}\",", t.public_key().unwrap()) +
+		&format!("\"publicKey\":\"0x{:x}\",", t.public.unwrap()) +
 		&format!("\"r\":\"0x{:x}\",", U256::from(signature.r())) +
 		&format!("\"raw\":\"0x{}\",", rlp.to_hex()) +
 		&format!("\"s\":\"0x{:x}\",", U256::from(signature.s())) +

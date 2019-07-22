@@ -140,7 +140,7 @@ impl VerifiedTransaction {
 	/// 2. In case we are converting pending block transactions that are already in the queue to match the function signature.
 	pub fn from_pending_block_transaction(tx: transaction::SignedTransaction) -> Self {
 		let hash = tx.hash();
-		let sender = tx.sender();
+		let sender = tx.sender;
 		VerifiedTransaction {
 			transaction: tx.into(),
 			hash,

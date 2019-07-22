@@ -81,7 +81,7 @@ impl TransactionFilter {
 				}
 		};
 
-		let sender = transaction.sender();
+		let sender = transaction.sender;
 		let value = transaction.value;
 		let key = (*parent_hash, sender);
 

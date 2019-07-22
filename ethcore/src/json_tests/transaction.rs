@@ -81,7 +81,7 @@ fn do_json_test<H: FnMut(&str, HookType)>(json_data: &[u8], start_stop_hook: &mu
 
 			match (res, result.hash, result.sender) {
 				(Ok(t), Some(hash), Some(sender)) => {
-					fail_unless(t.sender() == sender.into(), "sender mismatch");
+					fail_unless(t.sender == sender.into(), "sender mismatch");
 					fail_unless(t.hash() == hash.into(), "hash mismatch");
 				},
 				(Err(_), None, None) => {},

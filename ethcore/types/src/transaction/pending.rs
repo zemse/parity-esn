@@ -16,7 +16,7 @@
 
 use std::ops;
 use crate::BlockNumber;
-use crate::transaction::SignedTransaction;
+use crate::transaction::VerifiedTransaction;
 
 /// Transaction activation condition.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -31,14 +31,14 @@ pub enum Condition {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PendingTransaction {
 	/// Signed transaction data.
-	pub transaction: SignedTransaction,
+	pub transaction: VerifiedTransaction,
 	/// To be activated at this condition. `None` for immediately.
 	pub condition: Option<Condition>,
 }
 
 impl PendingTransaction {
 	/// Create a new pending transaction from signed transaction.
-	pub fn new(transaction: SignedTransaction, condition: Option<Condition>) -> Self {
+	pub fn new(transaction: VerifiedTransaction, condition: Option<Condition>) -> Self {
 		PendingTransaction {
 			transaction,
 			condition,
@@ -47,15 +47,15 @@ impl PendingTransaction {
 }
 
 impl ops::Deref for PendingTransaction {
-	type Target = SignedTransaction;
+	type Target = VerifiedTransaction;
 
-	fn deref(&self) -> &SignedTransaction {
+	fn deref(&self) -> &VerifiedTransaction {
 		&self.transaction
 	}
 }
 
-impl From<SignedTransaction> for PendingTransaction {
-	fn from(transaction: SignedTransaction) -> Self {
+impl From<VerifiedTransaction> for PendingTransaction {
+	fn from(transaction: VerifiedTransaction) -> Self {
 		PendingTransaction {
 			transaction,
 			condition: None,

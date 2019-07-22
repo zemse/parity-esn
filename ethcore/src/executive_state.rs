@@ -306,7 +306,7 @@ mod tests {
 			data: FromHex::from_hex("601080600c6000396000f3006000355415600957005b60203560003555").unwrap(),
 		}.sign(&secret(), None);
 
-		state.add_balance(&t.sender(), &(100.into()), CleanupMode::NoEmpty).unwrap();
+		state.add_balance(&t.sender, &(100.into()), CleanupMode::NoEmpty).unwrap();
 		let result = state.apply(&info, &machine, &t, true).unwrap();
 		let expected_trace = vec![FlatTrace {
 			trace_address: Default::default(),
@@ -364,7 +364,7 @@ mod tests {
 			data: FromHex::from_hex("5b600056").unwrap(),
 		}.sign(&secret(), None);
 
-		state.add_balance(&t.sender(), &(100.into()), CleanupMode::NoEmpty).unwrap();
+		state.add_balance(&t.sender, &(100.into()), CleanupMode::NoEmpty).unwrap();
 		let result = state.apply(&info, &machine, &t, true).unwrap();
 		let expected_trace = vec![FlatTrace {
 			trace_address: Default::default(),
@@ -401,7 +401,7 @@ mod tests {
 		}.sign(&secret(), None);
 
 		state.init_code(&Address::from_low_u64_be(0xa), FromHex::from_hex("6000").unwrap()).unwrap();
-		state.add_balance(&t.sender(), &(100.into()), CleanupMode::NoEmpty).unwrap();
+		state.add_balance(&t.sender, &(100.into()), CleanupMode::NoEmpty).unwrap();
 		let result = state.apply(&info, &machine, &t, true).unwrap();
 		let expected_trace = vec![FlatTrace {
 			trace_address: Default::default(),
@@ -442,7 +442,7 @@ mod tests {
 			data: vec![],
 		}.sign(&secret(), None);
 
-		state.add_balance(&t.sender(), &(100.into()), CleanupMode::NoEmpty).unwrap();
+		state.add_balance(&t.sender, &(100.into()), CleanupMode::NoEmpty).unwrap();
 		let result = state.apply(&info, &machine, &t, true).unwrap();
 		let expected_trace = vec![FlatTrace {
 			trace_address: Default::default(),
@@ -684,7 +684,7 @@ mod tests {
 		}.sign(&secret(), None);
 
 		state.init_code(&Address::from_low_u64_be(0xa), FromHex::from_hex("5b600056").unwrap()).unwrap();
-		state.add_balance(&t.sender(), &(100.into()), CleanupMode::NoEmpty).unwrap();
+		state.add_balance(&t.sender, &(100.into()), CleanupMode::NoEmpty).unwrap();
 		let result = state.apply(&info, &machine, &t, true).unwrap();
 		let expected_trace = vec![FlatTrace {
 			trace_address: Default::default(),
@@ -724,7 +724,7 @@ mod tests {
 
 		state.init_code(&Address::from_low_u64_be(0xa), FromHex::from_hex("60006000600060006000600b602b5a03f1").unwrap()).unwrap();
 		state.init_code(&Address::from_low_u64_be(0xb), FromHex::from_hex("6000").unwrap()).unwrap();
-		state.add_balance(&t.sender(), &(100.into()), CleanupMode::NoEmpty).unwrap();
+		state.add_balance(&t.sender, &(100.into()), CleanupMode::NoEmpty).unwrap();
 		let result = state.apply(&info, &machine, &t, true).unwrap();
 
 		let expected_trace = vec![FlatTrace {
@@ -782,7 +782,7 @@ mod tests {
 		}.sign(&secret(), None);
 
 		state.init_code(&Address::from_low_u64_be(0xa), FromHex::from_hex("60006000600060006045600b6000f1").unwrap()).unwrap();
-		state.add_balance(&t.sender(), &(100.into()), CleanupMode::NoEmpty).unwrap();
+		state.add_balance(&t.sender, &(100.into()), CleanupMode::NoEmpty).unwrap();
 		let result = state.apply(&info, &machine, &t, true).unwrap();
 		let expected_trace = vec![FlatTrace {
 			trace_address: Default::default(),
@@ -836,7 +836,7 @@ mod tests {
 		}.sign(&secret(), None);
 
 		state.init_code(&Address::from_low_u64_be(0xa), FromHex::from_hex("600060006000600060ff600b6000f1").unwrap()).unwrap();	// not enough funds.
-		state.add_balance(&t.sender(), &(100.into()), CleanupMode::NoEmpty).unwrap();
+		state.add_balance(&t.sender, &(100.into()), CleanupMode::NoEmpty).unwrap();
 		let result = state.apply(&info, &machine, &t, true).unwrap();
 		let expected_trace = vec![FlatTrace {
 			trace_address: Default::default(),
@@ -879,7 +879,7 @@ mod tests {
 
 		state.init_code(&Address::from_low_u64_be(0xa), FromHex::from_hex("60006000600060006000600b602b5a03f1").unwrap()).unwrap();
 		state.init_code(&Address::from_low_u64_be(0xb), FromHex::from_hex("5b600056").unwrap()).unwrap();
-		state.add_balance(&t.sender(), &(100.into()), CleanupMode::NoEmpty).unwrap();
+		state.add_balance(&t.sender, &(100.into()), CleanupMode::NoEmpty).unwrap();
 		let result = state.apply(&info, &machine, &t, true).unwrap();
 		let expected_trace = vec![FlatTrace {
 			trace_address: Default::default(),
@@ -935,7 +935,7 @@ mod tests {
 		state.init_code(&Address::from_low_u64_be(0xa), FromHex::from_hex("60006000600060006000600b602b5a03f1").unwrap()).unwrap();
 		state.init_code(&Address::from_low_u64_be(0xb), FromHex::from_hex("60006000600060006000600c602b5a03f1").unwrap()).unwrap();
 		state.init_code(&Address::from_low_u64_be(0xc), FromHex::from_hex("6000").unwrap()).unwrap();
-		state.add_balance(&t.sender(), &(100.into()), CleanupMode::NoEmpty).unwrap();
+		state.add_balance(&t.sender, &(100.into()), CleanupMode::NoEmpty).unwrap();
 		let result = state.apply(&info, &machine, &t, true).unwrap();
 		let expected_trace = vec![FlatTrace {
 			trace_address: Default::default(),
@@ -1009,7 +1009,7 @@ mod tests {
 		state.init_code(&Address::from_low_u64_be(0xa), FromHex::from_hex("60006000600060006000600b602b5a03f1").unwrap()).unwrap();
 		state.init_code(&Address::from_low_u64_be(0xb), FromHex::from_hex("60006000600060006000600c602b5a03f1505b601256").unwrap()).unwrap();
 		state.init_code(&Address::from_low_u64_be(0xc), FromHex::from_hex("6000").unwrap()).unwrap();
-		state.add_balance(&t.sender(), &(100.into()), CleanupMode::NoEmpty).unwrap();
+		state.add_balance(&t.sender, &(100.into()), CleanupMode::NoEmpty).unwrap();
 		let result = state.apply(&info, &machine, &t, true).unwrap();
 
 		let expected_trace = vec![FlatTrace {
@@ -1080,7 +1080,7 @@ mod tests {
 
 		state.init_code(&Address::from_low_u64_be(0xa), FromHex::from_hex("73000000000000000000000000000000000000000bff").unwrap()).unwrap();
 		state.add_balance(&Address::from_low_u64_be(0xa), &50.into(), CleanupMode::NoEmpty).unwrap();
-		state.add_balance(&t.sender(), &100.into(), CleanupMode::NoEmpty).unwrap();
+		state.add_balance(&t.sender, &100.into(), CleanupMode::NoEmpty).unwrap();
 		let result = state.apply(&info, &machine, &t, true).unwrap();
 		let expected_trace = vec![FlatTrace {
 			trace_address: Default::default(),

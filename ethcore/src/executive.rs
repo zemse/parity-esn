@@ -810,7 +810,7 @@ impl<'a, B: 'a + StateBackend> Executive<'a, B> {
 	pub fn transact_virtual<T, V>(&'a mut self, t: &SignedTransaction, options: TransactOptions<T, V>)
 		-> Result<Executed<T::Output, V::Output>, ExecutionError> where T: Tracer, V: VMTracer,
 	{
-		let sender = t.sender();
+		let sender = t.sender;
 		let balance = self.state.balance(&sender)?;
 		let needed_balance = t.value.saturating_add(t.gas.saturating_mul(t.gas_price));
 		if balance < needed_balance {
@@ -830,7 +830,7 @@ impl<'a, B: 'a + StateBackend> Executive<'a, B> {
 		mut tracer: T,
 		mut vm_tracer: V
 	) -> Result<Executed<T::Output, V::Output>, ExecutionError> where T: Tracer, V: VMTracer {
-		let sender = t.sender();
+		let sender = t.sender;
 		let nonce = self.state.nonce(&sender)?;
 
 		let schedule = self.schedule;
@@ -1153,7 +1153,7 @@ impl<'a, B: 'a + StateBackend> Executive<'a, B> {
 		trace!("exec::finalize: t.gas={}, sstore_refunds={}, suicide_refunds={}, refunds_bound={}, gas_left_prerefund={}, refunded={}, gas_left={}, gas_used={}, refund_value={}, fees_value={}\n",
 			t.gas, sstore_refunds, suicide_refunds, refunds_bound, gas_left_prerefund, refunded, gas_left, gas_used, refund_value, fees_value);
 
-		let sender = t.sender();
+		let sender = t.sender;
 		trace!("exec::finalize: Refunding refund_value={}, sender={}\n", refund_value, sender);
 		// Below: NoEmpty is safe since the sender must already be non-null to have sent this transaction
 		self.state.add_balance(&sender, &refund_value, CleanupMode::NoEmpty)?;
@@ -1941,7 +1941,7 @@ mod tests {
 			gas_price: U256::zero(),
 			nonce: U256::zero()
 		}.sign(keypair.secret(), None);
-		let sender = t.sender();
+		let sender = t.sender;
 		let contract = contract_address(CreateContractAddress::FromSenderAndNonce, &sender, &U256::zero(), &[]).0;
 
 		let mut state = get_temp_state_with_factory(factory);
@@ -1980,7 +1980,7 @@ mod tests {
 			gas_price: U256::zero(),
 			nonce: U256::one()
 		}.sign(keypair.secret(), None);
-		let sender = t.sender();
+		let sender = t.sender;
 
 		let mut state = get_temp_state_with_factory(factory);
 		state.add_balance(&sender, &U256::from(17), CleanupMode::NoEmpty).unwrap();
@@ -2013,7 +2013,7 @@ mod tests {
 			gas_price: U256::zero(),
 			nonce: U256::zero()
 		}.sign(keypair.secret(), None);
-		let sender = t.sender();
+		let sender = t.sender;
 
 		let mut state = get_temp_state_with_factory(factory);
 		state.add_balance(&sender, &U256::from(17), CleanupMode::NoEmpty).unwrap();
@@ -2048,7 +2048,7 @@ mod tests {
 			gas_price: U256::one(),
 			nonce: U256::zero()
 		}.sign(keypair.secret(), None);
-		let sender = t.sender();
+		let sender = t.sender;
 
 		let mut state = get_temp_state_with_factory(factory);
 		state.add_balance(&sender, &U256::from(100_017), CleanupMode::NoEmpty).unwrap();

@@ -407,7 +407,7 @@ impl Provider {
 			let contract = Self::contract_address_from_transaction(&desc.original_transaction)?;
 			// TODO #9825 Usage of BlockId::Latest
 			if self.get_contract_version(BlockId::Latest, &contract) >= PRIVATE_CONTRACT_WITH_NOTIFICATION_VER {
-				match self.state_changes_notify(BlockId::Latest, &contract, &desc.original_transaction.sender(), desc.original_transaction.hash()) {
+				match self.state_changes_notify(BlockId::Latest, &contract, &desc.original_transaction.sender, desc.original_transaction.hash()) {
 					Ok(_) => trace!(target: "privatetx", "Notification about private state changes sent"),
 					Err(err) => warn!(target: "privatetx", "Failed to send private state changed notification, error: {:?}", err),
 				}
@@ -573,7 +573,7 @@ impl Provider {
 		};
 
 		let engine = self.client.engine();
-		let sender = transaction.sender();
+		let sender = transaction.sender;
 		let nonce = state.nonce(&sender)?;
 		let contract_address = contract_address.unwrap_or_else(|| {
 			let (new_address, _) = ethcore_contract_address(CreateContractAddress::FromSenderAndNonce, &sender, &nonce, &transaction.data);
@@ -639,7 +639,7 @@ impl Provider {
 		if let Action::Call(_) = source.action {
 			return Err(Error::BadTransactionType);
 		}
-		let sender = source.sender();
+		let sender = source.sender;
 		let state = self.client.state_at(block).ok_or(Error::StatePruned)?;
 		let nonce = state.nonce(&sender)?;
 		let executed = self.execute_private(source, TransactOptions::with_no_tracing(), block)?;
