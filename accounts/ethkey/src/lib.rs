@@ -66,12 +66,13 @@ pub use self::secret::Secret;
 pub use self::extended::{ExtendedPublic, ExtendedSecret, ExtendedKeyPair, DerivationError, Derivation};
 
 use ethereum_types::H256;
+//use secp256k1::All;
 
 pub use ethereum_types::{Address, Public};
 pub type Message = H256;
 
 lazy_static! {
-	pub static ref SECP256K1: secp256k1::Secp256k1 = secp256k1::Secp256k1::new();
+	pub static ref SECP256K1: secp256k1::Secp256k1<secp256k1::All> = secp256k1::Secp256k1::new();
 }
 
 /// Uninstantiatable error type for infallible generators.
@@ -85,3 +86,22 @@ pub trait Generator {
 	/// Should be called to generate new keypair.
 	fn generate(&mut self) -> Result<KeyPair, Self::Error>;
 }
+
+
+// todo[dvdplm] find the proper place for this, used in maths and secret.rs
+use secp256k1::SecretKey;
+lazy_static! {
+	/// The number -1 encoded as a secret key
+	pub static ref MINUS_ONE_KEY: SecretKey = SecretKey::from_slice(&[
+		0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+		0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xfe,
+		0xba, 0xae, 0xdc, 0xe6, 0xaf, 0x48, 0xa0, 0x3b,
+		0xbf, 0xd2, 0x5e, 0x8c, 0xd0, 0x36, 0x41, 0x40][..]
+	).unwrap();
+}
+
+///// The number -1 encoded as a secret key
+//pub const MINUS_ONE_KEY: SecretKey = SecretKey([0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+//	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xfe,
+//	0xba, 0xae, 0xdc, 0xe6, 0xaf, 0x48, 0xa0, 0x3b,
+//	0xbf, 0xd2, 0x5e, 0x8c, 0xd0, 0x36, 0x41, 0x40]);

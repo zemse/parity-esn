@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Parity Ethereum.  If not, see <http://www.gnu.org/licenses/>.
 
-use super::{SECP256K1, Public, Secret, Error};
+use super::{SECP256K1, Public, Secret, Error, MINUS_ONE_KEY};
 use secp256k1::key;
 use secp256k1::constants::{GENERATOR_X, GENERATOR_Y, CURVE_ORDER};
 use ethereum_types::{BigEndianHash as _, U256, H256};
@@ -46,7 +46,7 @@ pub fn public_add(public: &mut Public, other: &Public) -> Result<(), Error> {
 /// Inplace sub one public key from another (EC point - EC point)
 pub fn public_sub(public: &mut Public, other: &Public) -> Result<(), Error> {
 	let mut key_neg_other = to_secp256k1_public(other)?;
-	key_neg_other.mul_assign(&SECP256K1, &key::MINUS_ONE_KEY)?;
+	key_neg_other.mul_assign(&SECP256K1, &MINUS_ONE_KEY)?;
 
 	let mut key_public = to_secp256k1_public(public)?;
 	key_public.add_assign(&SECP256K1, &key_neg_other)?;
@@ -57,7 +57,7 @@ pub fn public_sub(public: &mut Public, other: &Public) -> Result<(), Error> {
 /// Replace public key with its negation (EC point = - EC point)
 pub fn public_negate(public: &mut Public) -> Result<(), Error> {
 	let mut key_public = to_secp256k1_public(public)?;
-	key_public.mul_assign(&SECP256K1, &key::MINUS_ONE_KEY)?;
+	key_public.mul_assign(&SECP256K1, &MINUS_ONE_KEY)?;
 	set_public(public, &key_public);
 	Ok(())
 }

@@ -35,10 +35,9 @@ impl Generator for Random {
 impl Generator for OsRng {
 	type Error = ::Void;
 
+	// todo[dvdplm]: this can't error – change retval
 	fn generate(&mut self) -> Result<KeyPair, Self::Error> {
-		let (sec, publ) = SECP256K1.generate_keypair(self)
-			.expect("context always created with full capabilities; qed");
-
+		let (sec, publ) = SECP256K1.generate_keypair(self);
 		Ok(KeyPair::from_keypair(sec, publ))
 	}
 }

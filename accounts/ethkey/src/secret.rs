@@ -18,11 +18,11 @@ use std::fmt;
 use std::ops::Deref;
 use std::str::FromStr;
 use rustc_hex::ToHex;
-use secp256k1::constants::{SECRET_KEY_SIZE as SECP256K1_SECRET_KEY_SIZE};
+use secp256k1::constants::SECRET_KEY_SIZE as SECP256K1_SECRET_KEY_SIZE;
 use secp256k1::key;
 use ethereum_types::H256;
 use zeroize::Zeroize;
-use {Error, SECP256K1};
+use {Error, SECP256K1, MINUS_ONE_KEY};
 
 #[derive(Clone, PartialEq, Eq)]
 pub struct Secret {
@@ -116,7 +116,7 @@ impl Secret {
 			(false, false) => {
 				let mut key_secret = self.to_secp256k1_secret()?;
 				let mut other_secret = other.to_secp256k1_secret()?;
-				other_secret.mul_assign(&SECP256K1, &key::MINUS_ONE_KEY)?;
+				other_secret.mul_assign(&SECP256K1, &MINUS_ONE_KEY)?;
 				key_secret.add_assign(&SECP256K1, &other_secret)?;
 
 				*self = key_secret.into();
@@ -129,12 +129,12 @@ impl Secret {
 	pub fn dec(&mut self) -> Result<(), Error> {
 		match self.is_zero() {
 			true => {
-				*self = key::MINUS_ONE_KEY.into();
+				*self = MINUS_ONE_KEY.into();
 				Ok(())
 			},
 			false => {
 				let mut key_secret = self.to_secp256k1_secret()?;
-				key_secret.add_assign(&SECP256K1, &key::MINUS_ONE_KEY)?;
+				key_secret.add_assign(&SECP256K1, &MINUS_ONE_KEY)?;
 
 				*self = key_secret.into();
 				Ok(())
@@ -167,7 +167,7 @@ impl Secret {
 			true => Ok(()),
 			false => {
 				let mut key_secret = self.to_secp256k1_secret()?;
-				key_secret.mul_assign(&SECP256K1, &key::MINUS_ONE_KEY)?;
+				key_secret.mul_assign(&SECP256K1, &MINUS_ONE_KEY)?;
 
 				*self = key_secret.into();
 				Ok(())
