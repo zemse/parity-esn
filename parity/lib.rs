@@ -95,6 +95,7 @@ extern crate tempdir;
 
 mod account;
 mod account_utils;
+mod analyse_cmd;
 mod blockchain;
 mod cache;
 mod cli;
@@ -216,6 +217,7 @@ fn execute<Cr, Rr>(
 		Cmd::SignerReject { id, port, authfile } => cli_signer::signer_reject(id, port, authfile).map(|s| ExecutionAction::Instant(Some(s))),
 		Cmd::Snapshot(snapshot_cmd) => snapshot_cmd::execute(snapshot_cmd).map(|s| ExecutionAction::Instant(Some(s))),
 		Cmd::ExportHardcodedSync(export_hs_cmd) => export_hardcoded_sync::execute(export_hs_cmd).map(|s| ExecutionAction::Instant(Some(s))),
+		Cmd::Analyse(cmd) => cmd.run().map(|s| ExecutionAction::Instant(Some(s))),
 	}
 }
 

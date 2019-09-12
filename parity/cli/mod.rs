@@ -236,6 +236,11 @@ usage! {
 			"Print the hashed light clients headers of the given --chain (default: mainnet) in a JSON format. To be used as hardcoded headers in a genesis file.",
 		}
 
+		CMD cmd_analyse
+		{
+			"Analyse the chain",
+		}
+
 		// CMD removed in 2.0
 
 		CMD cmd_dapp
@@ -1716,6 +1721,7 @@ mod tests {
 			cmd_db_kill: false,
 			cmd_db_reset: false,
 			cmd_export_hardcoded_sync: false,
+			cmd_analyse: false,
 
 			// Arguments
 			arg_daemon_pid_file: None,

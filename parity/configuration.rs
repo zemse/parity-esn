@@ -35,6 +35,7 @@ use snapshot::SnapshotConfiguration;
 use miner::pool;
 use verification::queue::VerifierSettings;
 
+use analyse_cmd::AnalyseCommand;
 use rpc::{IpcConfiguration, HttpConfiguration, WsConfiguration};
 use parity_rpc::NetworkSettings;
 use cache::CacheConfig;
@@ -85,6 +86,7 @@ pub enum Cmd {
 	Snapshot(SnapshotCommand),
 	Hash(Option<String>),
 	ExportHardcodedSync(ExportHsyncCmd),
+	Analyse(AnalyseCommand),
 }
 
 pub struct Execute {
@@ -355,6 +357,20 @@ impl Configuration {
 				compaction: compaction,
 			};
 			Cmd::ExportHardcodedSync(export_hs_cmd)
+		} else if self.args.cmd_analyse {
+			let cmd = AnalyseCommand {
+				cache_config: cache_config,
+				dirs: dirs,
+				spec: spec,
+				pruning: pruning,
+				pruning_history: pruning_history,
+				pruning_memory: self.args.arg_pruning_memory,
+				tracing: tracing,
+				fat_db: fat_db,
+				compaction: compaction,
+				max_round_blocks_to_import: self.args.arg_max_round_blocks_to_import,
+			};
+			Cmd::Analyse(cmd)
 		} else {
 			let daemon = if self.args.cmd_daemon {
 				Some(self.args.arg_daemon_pid_file.clone().expect("CLI argument is required; qed"))
