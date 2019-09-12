@@ -54,7 +54,7 @@ rand_xorshift = "0.1.1"
 rayon = "1.1"
 rlp = "0.4.0"
 rlp_derive = { path = "../util/rlp-derive" }
-rustc-hex = { version = "1", optional = true }
+rustc-hex = "2"
 serde = "1.0"
 serde_derive = "1.0"
 snapshot = { path = "snapshot" }
@@ -79,7 +79,7 @@ engine = { path = "./engine", features = ["test-helpers"] }
 env_logger = "0.5"
 ethash = { path = "../ethash" }
 ethcore-accounts = { path = "../accounts" }
-ethjson = { path = "../json" }
+ethjson = { path = "../json", features = ["test-helpers"] }
 ethkey = { path = "../accounts/ethkey" }
 fetch = { path = "../util/fetch" }
 kvdb-memorydb = "0.1"
@@ -89,11 +89,10 @@ machine = { path = "./machine", features = ["test-helpers"] }
 macros = { path = "../util/macros" }
 null-engine = { path = "./engines/null-engine" }
 parity-runtime = { path = "../util/runtime" }
-pod = { path = "pod" }
 rlp_compress = { path = "../util/rlp-compress" }
-rustc-hex = "1"
 serde_json = "1.0"
 stats = { path = "../util/stats" }
+pod = { path = "pod" }
 tempdir = "0.3"
 trie-standardmap = "0.15.0"
 
@@ -136,7 +135,6 @@ test-helpers = [
     "kvdb-rocksdb",
     "macros",
     "pod",
-    "rustc-hex",
     "tempdir",
     "basic-authority/test-helpers"
  ]
