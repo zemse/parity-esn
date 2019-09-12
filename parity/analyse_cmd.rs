@@ -14,8 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Parity Ethereum.  If not, see <http://www.gnu.org/licenses/>.
 
-//! Snapshot and restoration commands.
-
 use std::sync::Arc;
 
 use client_traits::BlockInfo;
@@ -36,7 +34,7 @@ use user_defaults::UserDefaults;
 use ethcore_private_tx;
 use db;
 
-/// Command for snapshot creation or restoration.
+/// Command for analysing the current chain
 #[derive(Debug, PartialEq)]
 pub struct AnalyseCommand {
 	pub cache_config: CacheConfig,
@@ -65,13 +63,15 @@ impl AnalyseCommand {
 				None => Err(format!("Could not find block #{}", i))?,
 			};
 
-			for tx in block.transaction_views() {
-				let action_rlp = tx.rlp().at(3).rlp;
+			let txs_rlp = block.view().transactions_rlp();
+			for tx_rlp in txs_rlp.into_iter() {
+				let action_rlp = tx_rlp.at(3).rlp;
 
 				if action_rlp.is_empty() && action_rlp.is_list() {
-					println!("Found invalid action for tx {:x} at block #{}", tx.hash(), i);
+					println!("Found invalid action at block #{}", i);
 				}
 			}
+
 			if i % 1_000 == 0 {
 				println!("... up to block #{} ...", i);
 			}
@@ -141,8 +141,6 @@ impl AnalyseCommand {
 			&snapshot_path,
 			restoration_db_handler,
 			&self.dirs.ipc_path(),
-			// TODO [ToDr] don't use test miner here
-			// (actually don't require miner at all)
 			Arc::new(Miner::new_for_tests(&spec, None)),
 			Arc::new(ethcore_private_tx::DummySigner),
 			Box::new(ethcore_private_tx::NoopEncryptor),
