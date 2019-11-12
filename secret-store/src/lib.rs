@@ -85,13 +85,14 @@ use parity_runtime::Executor;
 
 pub use types::{ServerKeyId, EncryptedDocumentKey, RequestSignature, Public,
 	Error, NodeAddress, ContractAddress, ServiceConfiguration, ClusterConfiguration};
-pub use traits::{NodeKeyPair, KeyServer};
+pub use traits::KeyServer;
+pub use trusted_client::SigningKeyPair;
 pub use self::node_key_pair::PlainNodeKeyPair;
 #[cfg(feature = "accounts")]
 pub use self::node_key_pair::KeyStoreNodeKeyPair;
 
 /// Start new key server instance
-pub fn start(client: Arc<Client>, sync: Arc<dyn SyncProvider>, miner: Arc<Miner>, self_key_pair: Arc<dyn NodeKeyPair>, mut config: ServiceConfiguration,
+pub fn start(client: Arc<Client>, sync: Arc<dyn SyncProvider>, miner: Arc<Miner>, self_key_pair: Arc<dyn SigningKeyPair>, mut config: ServiceConfiguration,
 	db: Arc<dyn KeyValueDB>, executor: Executor) -> Result<Box<dyn KeyServer>, Error>
 {
 	let trusted_client = trusted_client::TrustedClient::new(self_key_pair.clone(), client.clone(), sync, miner);
