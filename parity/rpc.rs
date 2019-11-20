@@ -68,6 +68,7 @@ impl Default for HttpConfiguration {
 pub struct IpcConfiguration {
 	pub enabled: bool,
 	pub socket_addr: String,
+	pub chmod: u16,
 	pub apis: ApiSet,
 }
 
@@ -81,6 +82,7 @@ impl Default for IpcConfiguration {
 				let data_dir = ::dir::default_data_path();
 				parity_ipc_path(&data_dir, "$BASE/jsonrpc.ipc", 0)
 			},
+			chmod: 0o666,
 			apis: ApiSet::IpcContext,
 		}
 	}
@@ -253,7 +255,7 @@ pub fn new_ipc<D: rpc_apis::Dependencies>(
 		}
 	}
 
-	match rpc::start_ipc(&conf.socket_addr, handler, rpc::RpcExtractor) {
+	match rpc::start_ipc(&conf.socket_addr, handler, rpc::RpcExtractor, conf.chmod) {
 		Ok(server) => Ok(Some(server)),
 		Err(io_error) => Err(format!("IPC error: {}", io_error)),
 	}
