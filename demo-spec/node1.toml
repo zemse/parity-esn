@@ -1,12 +1,19 @@
 [parity]
 chain = "demo-spec.json"
-base_path = "/tmp/parity1"
+base_path = "/tmp/parity0"
 [network]
-port = 30301
+port = 30300
+
+reserved_only = false
+reserved_peers = "./reserved_peers.txt"
+
 [rpc]
-port = 8541
+port = 8540
 apis = ["web3", "eth", "net", "personal", "parity", "parity_set", "traces", "rpc", "parity_accounts"]
+hosts = ["all"]
 [websockets]
-port = 8451
-[ipc]
-disable = true
+port = 8450
+[account]
+password = ["node.pwds"]
+[mining]
+engine_signer = "0xb4fb9d198047fe763472d58045f1d9341161eb73"
